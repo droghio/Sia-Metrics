@@ -4,7 +4,7 @@
 // Scrapes various data sources and visualizes
 // collected data in a web ui.
 
-const data=require("datalogger.js").init(apiEndpoints)
+const data = require("datalogger.js").init(apiEndpoints)
 
 data.startLogging()
 

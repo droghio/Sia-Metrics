@@ -3,14 +3,15 @@
 //
 // Loads provided enpoints and collets data into central data source.
 //
-Path = require("path")
+const Path = require("path")
 
 module.exports = {
     init: (endpointNames) => {
         const dataEndpoints = {}
 
         endpointNames.forEach((name) => {
-            dataEndpoints[name] = require(Path.join(__dirname, "endpoints", name))
+            let newEndpoint = require(Path.join(__dirname, "endpoints", name))
+            dataEndpoints[name] = new newEndpoint()
         })
 
         const startLogging = () => {
@@ -18,7 +19,13 @@ module.exports = {
                 dataEndpoints[key].startLogging()
             }
         }
-    
+ 
+        const stopLogging = () => {
+            for (const key in dataEndpoints){
+                dataEndpoints[key].stopLogging()
+            }
+        }
+
         const latest = (count) => {
             const latestData = {}
             for (const key in dataEndpoints){
@@ -29,7 +36,9 @@ module.exports = {
     
         return {
             startLogging,
-            latest
+            stopLogging,
+            latest,
+            dataEndpoints,
         }
     }
 }
