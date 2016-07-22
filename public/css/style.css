@@ -37,22 +37,14 @@ body > #chart-container {
 .chart {
     position: relative;
     display: inline-block;
-    padding: .25em .25em 0em;
+    padding: 0em .25em;
     width: 30vw;
     min-width: 500px;
     min-height: 300px;
     border: 1px solid #C5C5C5;
     border-radius: .5em;
     overflow: hidden;
-}
-
-.chart .current-metric {
-    display: inline-block;
-    padding: 1em;
-}
-
-.chart h2 {
-    display: inline-block;
+    border-bottom: 1em solid #00CBA0;
 }
 
 .chart header {
@@ -61,8 +53,40 @@ body > #chart-container {
     padding: .25em 0px;
     background-color: #00CBA0;
     color: #FFFFFF;
-    left: 0px;
     position: relative;
     width: calc(100% + .5em);
     left: -.25em;
+    margin-bottom: .5em;
+}
+
+.chart canvas {
+    position: relative;
+    display: inline-block;
+    padding: .5em 0em;
+}
+
+.chart .current-metric {
+    display: inline-block;
+    padding: 1em;
+}
+
+.chart .current-metric h2 {
+    display: inline-block;
+    margin: 0px;
+    margin-bottom: .5em;
+}
+.chart .current-metric:nth-of-type(1) h2 {
+    color: #19B3FE;
+}
+.chart .current-metric:nth-of-type(2) h2 {
+    color:  #D14634;
+}
+.chart .current-metric:nth-of-type(3) h2 {
+    color: #00CBA0;
+}
+.chart .current-metric:nth-of-type(4) h2 {
+    color: #285165;
+}
+.chart .current-metric:nth-of-type(5) h2 {
+    color: #FE1932;
 }
