@@ -47,16 +47,16 @@ wrapper((data) => {
             let currentMetrics = ""
             for (let dataSetName in dataset.currentData){
                 currentMetrics += `
-                    <p>
+                    <div class="current-metric">
                         <h2>${dataSetName}</h2>
                         <span>${dataset.currentData[dataSetName]}</span>
-                    </p>
+                    </div>
                 `
             }
 
             //Generate containing div.
             let chartTemplate = `
-                <section id="${chartName}">
+                <section id="${chartName}" class="chart">
                     <canvas id="${chartName}-chart"></canvas>
                     <div id="${chartName}-metrics">
                         ${currentMetrics}

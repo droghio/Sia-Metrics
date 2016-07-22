@@ -1,0 +1,68 @@
+/*  Style Guide:
+ *    Transparent: 70% Opacity
+ *
+ *    White:      #FFFFFF
+ *    Grey-White: #F5F5F5
+ *    Faint-Grey: #ECECEC
+ *    Light-Grey: #DDDDDD
+ *    Grey:       #C5C5C5
+ *    Grey-Black: #4A4A4A
+ *    Black:      #000000
+ *    Neon-Green: #00CBA0
+ */
+
+html, body {
+	height: 100%;
+	width: 100%;
+    margin: 0px;
+    padding: 0px;
+	font-family: 'Roboto Condensed', sans-serif;
+    background-color: #ECECEC;
+	font-weight: 300;
+    font-size: 18px;
+}
+
+body > header {
+    background-color: #000;
+    font-size: 2.5em;
+    padding: .25em;
+    color: #00CBA0;
+}
+
+body > #chart-container {
+    padding: 2em .25em;
+    text-align: center;
+}
+
+.chart {
+    position: relative;
+    display: inline-block;
+    padding: .25em .25em 0em;
+    width: 30vw;
+    min-width: 500px;
+    min-height: 300px;
+    border: 1px solid #C5C5C5;
+    border-radius: .5em;
+    overflow: hidden;
+}
+
+.chart .current-metric {
+    display: inline-block;
+    padding: 1em;
+}
+
+.chart h2 {
+    display: inline-block;
+}
+
+.chart header {
+    font-size: 2em;
+    font-weight: bold;
+    padding: .25em 0px;
+    background-color: #00CBA0;
+    color: #FFFFFF;
+    left: 0px;
+    position: relative;
+    width: calc(100% + .5em);
+    left: -.25em;
+}
