@@ -33,4 +33,4 @@ app.listen(PORT, () =>
     console.log(`Running server on port ${PORT}`)
 )
 
-//data.startLogging()
+data.startLogging()
