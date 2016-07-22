@@ -81,7 +81,7 @@ class DataEndpoint {
                 }, (res) => {
                     let buffer = ""
                     res.on("data", (data) => {
-                        buffer += data
+                       buffer += data
                     });
 
                     res.on("end", () => {
@@ -97,7 +97,6 @@ class DataEndpoint {
                             this.errorLog(`ERROR: Received data: ${buffer}`)
                         }
                     })
-
                 }).on("error", (err) => {
                     this.errorLog(err);
                     reject(err)
