@@ -3,13 +3,24 @@
 //
 // All endpoints must log data and return latest data.
 //
-Path = require("path")
+const Path = require("path")
+const https = require("https")
 
 DataEndpoint = require("./dataendpoint.js")
 class GithubEndpoint extends DataEndpoint {
     constructor(){
         super()
         this.moduleName = Path.basename(__filename)
+        this.fetchData = this.makeFetchData({
+            hostname: "api.github.com",
+            path: "/repos/nebulouslabs/sia",
+            headers: {
+                "User-Agent": "Sia-Metrics"
+            }
+        }, (data) => {
+            data.date = new Date()
+            return data
+        })
     }
 }
 

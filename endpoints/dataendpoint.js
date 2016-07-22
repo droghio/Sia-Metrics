@@ -6,7 +6,6 @@
 const Path = require("path")
 const fs = require("fs")
 
-
 class DataEndpoint {
     constructor(){
         this.tmplog = []
@@ -35,7 +34,7 @@ class DataEndpoint {
             this.loggingInterval = setInterval(() =>
                 this.fetchData().then((data) =>
                     this.logData(data)
-            ), 1000)
+            ), 5000)
         } else {
             this.errorLog("ERROR: Already Logging")
         }
@@ -53,7 +52,7 @@ class DataEndpoint {
     }
     
     logData(data){
-        fs.writeSync(this.logFile, JSON.stringify(data)+",")
+        fs.writeSync(this.logFile, JSON.stringify(data)+",\n")
 
         //Prevent too much data from being stored in memory.
         if (this.tmplog.length == 100){
@@ -70,6 +69,43 @@ class DataEndpoint {
         ))
     }
 
+    makeFetchData(url, processData){
+       return () => (
+            new Promise( (resolve, reject) => {
+                https.get({
+                    hostname: "api.github.com",
+                    path: "/repos/nebulouslabs/sia",
+                    headers: {
+                        "User-Agent": "Sia-Metrics"
+                    }
+                }, (res) => {
+                    let buffer = ""
+                    res.on("data", (data) => {
+                        buffer += data
+                    });
+
+                    res.on("end", () => {
+                        try {
+                            const rawData = JSON.parse(buffer)
+                            if (processData){
+                                resolve(processData(rawData))
+                            } else {
+                                resolve(rawData)
+                            }
+                        } catch (e) {
+                            this.errorLog(`ERROR: Problem when parsing buffer: ${e}`)
+                            this.errorLog(`ERROR: Received data: ${buffer}`)
+                        }
+                    })
+
+                }).on("error", (err) => {
+                    this.errorLog(err);
+                    reject(err)
+                });
+            })
+        )
+    }
+
     data(count){
         count = count || 5
         if (count <= this.tmplog.length){
@@ -77,14 +113,11 @@ class DataEndpoint {
         } else {
             this.errorLog("Asked for too much data, reloading log.")
             let tmpdata = ""
-            tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on")).slice(0,-1)
+            tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on"), "utf8")
+            tmpdata = tmpdata.trim().slice(0,-1)
             tmpdata = JSON.parse(`[${tmpdata}]`)
             return tmpdata.splice(-count)
         }
-    }
-
-    shutdown(){
-        fs.closeSync(this.logFile)
     }
 }
 
