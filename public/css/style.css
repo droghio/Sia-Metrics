@@ -45,6 +45,8 @@ body > #chart-container {
     border-radius: .5em;
     overflow: hidden;
     border-bottom: 1em solid #00CBA0;
+    margin: 2.5vw;
+    vertical-align: top;
 }
 
 .chart header {

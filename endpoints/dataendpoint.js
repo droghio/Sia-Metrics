@@ -6,6 +6,9 @@
 const Path = require("path")
 const fs = require("fs")
 
+//How often to poll endpoints.
+const logTimeInterval = 60*60*1000 //Once an hour.
+
 class DataEndpoint {
     constructor(){
         this.tmplog = []
@@ -34,7 +37,7 @@ class DataEndpoint {
             this.loggingInterval = setInterval(() =>
                 this.fetchData().then((data) =>
                     this.logData(data)
-            ), 5000)
+            ), logTimeInterval)
         } else {
             this.errorLog("ERROR: Already Logging")
         }
@@ -60,7 +63,7 @@ class DataEndpoint {
         }
 
         this.tmplog.push(data)
-        this.errorLog(`Logging Data: ${JSON.stringify(data)}`)
+        this.errorLog("Logging Data")
     }
 
     fetchData(){
@@ -69,16 +72,10 @@ class DataEndpoint {
         ))
     }
 
-    makeFetchData(url, processData){
+    makeFetchData(options, processData){
        return () => (
             new Promise( (resolve, reject) => {
-                https.get({
-                    hostname: "api.github.com",
-                    path: "/repos/nebulouslabs/sia",
-                    headers: {
-                        "User-Agent": "Sia-Metrics"
-                    }
-                }, (res) => {
+                https.get(options, (res) => {
                     let buffer = ""
                     res.on("data", (data) => {
                        buffer += data
