@@ -4,7 +4,6 @@
 // All endpoints must log data and return latest data.
 //
 const Path = require("path")
-const https = require("https")
 
 DataEndpoint = require("./dataendpoint.js")
 class ExplorerEndpoint extends DataEndpoint {

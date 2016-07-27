@@ -5,9 +5,7 @@
 //
 const Path = require("path")
 const fs = require("fs")
-
-//How often to poll endpoints.
-const logTimeInterval = 60*60*1000 //Once an hour.
+const https = require("https")
 
 class DataEndpoint {
     constructor(){
@@ -15,6 +13,9 @@ class DataEndpoint {
         this.loggingInterval = undefined
         this.moduleName = Path.basename(__filename)
         this.logfile = undefined
+
+        //How often to poll endpoints.
+        this.logTimeInterval = 60*1000 //Once a second.
 
         let logDirectory = Path.join(__dirname, "../", "logs")
         try {
@@ -37,7 +38,7 @@ class DataEndpoint {
             this.loggingInterval = setInterval(() =>
                 this.fetchData().then((data) =>
                     this.logData(data)
-            ), logTimeInterval)
+            ).catch((e) => this.errorLog(e)), this.logTimeInterval)
         } else {
             this.errorLog("ERROR: Already Logging")
         }
@@ -72,7 +73,7 @@ class DataEndpoint {
         ))
     }
 
-    makeFetchData(options, processData){
+    makeFetchData(options, processData, isNotJSON){
        return () => (
             new Promise( (resolve, reject) => {
                 https.get(options, (res) => {
@@ -83,9 +84,9 @@ class DataEndpoint {
 
                     res.on("end", () => {
                         try {
-                            const rawData = JSON.parse(buffer)
+                            const rawData = isNotJSON ? buffer : JSON.parse(buffer)
                             if (processData){
-                                resolve(processData(rawData))
+                                resolve(processData(rawData, res))
                             } else {
                                 resolve(rawData)
                             }

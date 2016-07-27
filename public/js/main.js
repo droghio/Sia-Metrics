@@ -80,8 +80,34 @@ const dataParsers = {
         chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 1000
 
         callback(addChartStyle(dataset), chartStyle)
-    }
+    },
 
+    "forum.js": (chartName, chartData, callback) => {
+        //We are collecting one metric:
+        //    Online
+
+        let dataset = {
+            datasets: [
+                { label: "online", data: [] },
+            ],
+            labels: []
+        }
+
+        //This is the data for the chart.
+        for (let dataPoint of chartData){
+            dataset.datasets[0].data.push( dataPoint.online )
+            dataset.labels.push( moment(dataPoint.date).format("MMM D h:m:ss A") )
+        }
+        
+        //This is the data for the overview bar.
+        let latestData = chartData[chartData.length-1]
+        dataset.currentData = {
+            "is online": latestData.online,
+        }
+
+        let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
+        callback(addChartStyle(dataset), chartStyle)
+    }
 }
 
 
@@ -110,14 +136,10 @@ const twoAxisLineChart = {
                 type: "linear",
                 stacked: true
             },{
-                ticks: {
-                    //fixedStepSize: 1
-                },
+                ticks: {},
                 id: "1"
             },{
-                ticks: {
-                    //suggestedMin: 50
-                },
+                ticks: {},
                 id: "2"
             }]
         }
