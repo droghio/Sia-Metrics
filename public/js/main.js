@@ -35,7 +35,7 @@ const dataParsers = {
 
         let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
         chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 1
-        chartStyle.options.scales.yAxes[2].ticks.suggestedMin = 50
+        chartStyle.options.scales.yAxes[2].ticks.suggestedMin = 52
 
         callback(addChartStyle(dataset), chartStyle)
     },
@@ -104,7 +104,33 @@ const dataParsers = {
 
         let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
         callback(addChartStyle(dataset), chartStyle)
+    },
+
+    "blog.js": (chartName, chartData, callback) => {
+        //We are collecting one metric:
+        //    Online
+
+        let dataset = {
+            datasets: [
+                { label: "online", data: [] },
+            ]
+        }
+
+        //This is the data for the chart.
+        for (let dataPoint of chartData){
+            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
+        }
+        
+        //This is the data for the overview bar.
+        const latestData = chartData[chartData.length-1]
+        dataset.currentData = {
+            "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
+        }
+
+        let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
+        callback(addChartStyle(dataset), chartStyle)
     }
+
 }
 
 
