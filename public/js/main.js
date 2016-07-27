@@ -16,23 +16,21 @@ const dataParsers = {
                 { label: "stars", data: [], yAxisID: "1" },
                 { label: "watches", data: [], yAxisID: "2" },
                 { label: "forks", data: [], yAxisID: "2"}
-            ],
-            labels: []
+            ]
         }
 
         //This is the data for the chart.
         for (let dataPoint of chartData){
-            dataset.datasets[0].data.push(dataPoint.stargazers_count)
-            dataset.datasets[1].data.push(dataPoint.subscribers_count)
-            dataset.datasets[2].data.push(dataPoint.forks)
-            dataset.labels.push( moment(dataPoint.date).format("MMM D h:m:ss A") )
+            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.stargazers_count })
+            dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.subscribers_count })
+            dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.forks })
         }
         
         //This is the data for the overview bar.
         dataset.currentData = {
-            stars: dataset.datasets[0].data[dataset.datasets[0].data.length-1],
-            watchers: dataset.datasets[1].data[dataset.datasets[1].data.length-1],
-            forks: dataset.datasets[2].data[dataset.datasets[2].data.length-1]
+            stars: dataset.datasets[0].data[dataset.datasets[0].data.length-1].y,
+            watchers: dataset.datasets[1].data[dataset.datasets[1].data.length-1].y,
+            forks: dataset.datasets[2].data[dataset.datasets[2].data.length-1].y
         }
 
         let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
@@ -54,20 +52,18 @@ const dataParsers = {
                 { label: "difficulty", data: [], yAxisID: "1" },
                 { label: "hash rate", data: [], yAxisID: "1" },
                 { label: "block height", data: [], yAxisID: "2"}
-            ],
-            labels: []
+            ]
         }
 
         //This is the data for the chart.
         for (let dataPoint of chartData){
-            dataset.datasets[0].data.push( (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() )
-            dataset.datasets[1].data.push( (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber()  )
-            dataset.datasets[2].data.push( dataPoint.height )
-            dataset.labels.push( moment(dataPoint.date).format("MMM D h:m:ss A") )
+            dataset.datasets[0].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() })
+            dataset.datasets[1].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() })
+            dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.height })
         }
         
         //This is the data for the overview bar.
-        let latestData = chartData[chartData.length-1]
+        const latestData = chartData[chartData.length-1]
         dataset.currentData = {
             "difficulty (TH)": (new BigNumber(latestData.difficulty)).times("1e-12").toFixed(0),
             "hash rate (GH/s)": (new BigNumber(latestData.estimatedhashrate)).times("1e-9").toFixed(0),
@@ -77,7 +73,10 @@ const dataParsers = {
 
         let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
         chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 2000
-        chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 1000
+        chartStyle.options.scales.yAxes[1].ticks.suggestedMax = 20000
+        chartStyle.options.scales.yAxes[1].ticks.suggestedMin = 4000
+        chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 500
+        chartStyle.options.scales.yAxes[2].ticks.min = 60000
 
         callback(addChartStyle(dataset), chartStyle)
     },
@@ -89,20 +88,18 @@ const dataParsers = {
         let dataset = {
             datasets: [
                 { label: "online", data: [] },
-            ],
-            labels: []
+            ]
         }
 
         //This is the data for the chart.
         for (let dataPoint of chartData){
-            dataset.datasets[0].data.push( dataPoint.online )
-            dataset.labels.push( moment(dataPoint.date).format("MMM D h:m:ss A") )
+            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
         }
         
         //This is the data for the overview bar.
-        let latestData = chartData[chartData.length-1]
+        const latestData = chartData[chartData.length-1]
         dataset.currentData = {
-            "is online": latestData.online,
+            "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
         }
 
         let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
@@ -121,6 +118,11 @@ const defaultChartOptions =  {
     options: {
         legend: {
             display: false
+        },
+        scales: {
+            xAxes: [{
+                type: "time"
+            }],
         }
     }
 }
@@ -132,6 +134,9 @@ const twoAxisLineChart = {
             display: false,
         },
         scales: {
+            xAxes: [{
+                type: "time"
+            }],
             yAxes: [{
                 type: "linear",
                 stacked: true

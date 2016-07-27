@@ -17,11 +17,7 @@ class ForumEndpoint extends DataEndpoint {
                 "User-Agent": "Sia-Metrics"
             }
         }, (data, res) => {
-            if (res.statusCode >= 500 && res.statusCode <= 599){
-                return { date: new Date(), online: false }
-            } else {
-                return { date: new Date(), online: true }
-            }
+            return { date: new Date(), statusCode: res.statusCode }
         }, true)
     }
 }
