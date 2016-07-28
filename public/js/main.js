@@ -4,200 +4,18 @@
 // Pulls latest data from the server and generates charts based on data.
 //
 
+// These functions are passed the arrays containing the raw logging data.
+// They must filter the data and return a dataset object and current statistics
+// that are used to generate the UI. Be sure to include the parser file in
+// index.html before attempting to use it.
+//
+// The parser uses the logging modules name, ie "github.js" to load the
+// correct parser.
 const dataParsers = {
-    "github.js": (chartName, chartData, callback) => {
-        //We are collecting three metrics:
-        //    Stars
-        //    Forks
-        //    Subscribers
-
-        let dataset = {
-            datasets: [
-                { label: "stars", data: [], yAxisID: "1" },
-                { label: "watches", data: [], yAxisID: "2" },
-                { label: "forks", data: [], yAxisID: "2"}
-            ]
-        }
-
-        //This is the data for the chart.
-        for (let dataPoint of chartData){
-            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.stargazers_count })
-            dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.subscribers_count })
-            dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.forks })
-        }
-        
-        //This is the data for the overview bar.
-        dataset.currentData = {
-            stars: dataset.datasets[0].data[dataset.datasets[0].data.length-1].y,
-            watchers: dataset.datasets[1].data[dataset.datasets[1].data.length-1].y,
-            forks: dataset.datasets[2].data[dataset.datasets[2].data.length-1].y
-        }
-
-        let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
-        chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 1
-        chartStyle.options.scales.yAxes[2].ticks.suggestedMin = 52
-
-        callback(addChartStyle(dataset), chartStyle)
-    },
-
-    "explorer.js": (chartName, chartData, callback) => {
-        //We are collecting four metrics:
-        //    Difficulty
-        //    Hash Rate
-        //    Block Height
-        //    Total Coins
-
-        let dataset = {
-            datasets: [
-                { label: "difficulty", data: [], yAxisID: "1" },
-                { label: "hash rate", data: [], yAxisID: "1" },
-                { label: "block height", data: [], yAxisID: "2"}
-            ]
-        }
-
-        //This is the data for the chart.
-        for (let dataPoint of chartData){
-            dataset.datasets[0].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() })
-            dataset.datasets[1].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() })
-            dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.height })
-        }
-        
-        //This is the data for the overview bar.
-        const latestData = chartData[chartData.length-1]
-        dataset.currentData = {
-            "difficulty (TH)": (new BigNumber(latestData.difficulty)).times("1e-12").toFixed(0),
-            "hash rate (GH/s)": (new BigNumber(latestData.estimatedhashrate)).times("1e-9").toFixed(0),
-            "block height": latestData.height,
-            "total siacoins (MS)": (new BigNumber(latestData.totalcoins)).times("1e-30").toFixed(0)
-        }
-
-        let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
-        chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 2000
-        chartStyle.options.scales.yAxes[1].ticks.suggestedMax = 20000
-        chartStyle.options.scales.yAxes[1].ticks.suggestedMin = 4000
-        chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 500
-        chartStyle.options.scales.yAxes[2].ticks.min = 60000
-
-        callback(addChartStyle(dataset), chartStyle)
-    },
-
-    "forum.js": (chartName, chartData, callback) => {
-        //We are collecting one metric:
-        //    Online
-
-        let dataset = {
-            datasets: [
-                { label: "online", data: [] },
-            ]
-        }
-
-        //This is the data for the chart.
-        for (let dataPoint of chartData){
-            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
-        }
-        
-        //This is the data for the overview bar.
-        const latestData = chartData[chartData.length-1]
-        dataset.currentData = {
-            "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
-        }
-
-        let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
-        callback(addChartStyle(dataset), chartStyle)
-    },
-
-    "blog.js": (chartName, chartData, callback) => {
-        //We are collecting one metric:
-        //    Online
-
-        let dataset = {
-            datasets: [
-                { label: "online", data: [] },
-            ]
-        }
-
-        //This is the data for the chart.
-        for (let dataPoint of chartData){
-            dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
-        }
-        
-        //This is the data for the overview bar.
-        const latestData = chartData[chartData.length-1]
-        dataset.currentData = {
-            "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
-        }
-
-        let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
-        callback(addChartStyle(dataset), chartStyle)
-    }
-
-}
-
-
-//
-// Chart Style Options
-//
-//
-
-const defaultChartOptions =  {
-    type: "line",
-    options: {
-        legend: {
-            display: false
-        },
-        scales: {
-            xAxes: [{
-                type: "time"
-            }],
-        }
-    }
-}
-
-const twoAxisLineChart = {
-    type: "line",
-    options: {
-        legend: {
-            display: false,
-        },
-        scales: {
-            xAxes: [{
-                type: "time"
-            }],
-            yAxes: [{
-                type: "linear",
-                stacked: true
-            },{
-                ticks: {},
-                id: "1"
-            },{
-                ticks: {},
-                id: "2"
-            }]
-        }
-    }
-}
-
-
-const addChartStyle = (dataset) => {
-    const colors = [
-        "#19B3FE",
-        "#D14634",
-        "#00CBA0",
-        "#285165",
-        "#FE1932",
-        "#0000FF",
-        "#FF0000",
-        "#FFFF00",
-        "#00FF00",
-    ]
-
-    for (let idx in dataset.datasets){
-        dataset.datasets[idx].backgroundColor = colors[idx]
-        dataset.datasets[idx].borderColor = colors[idx]
-        dataset.datasets[idx].fill = false
-    }
-
-    return dataset
+    "github.js": githubParser,
+    "explorer.js": explorerParser,
+    "forum.js": forumParser,
+    "blog.js": blogParser, 
 }
 
 
@@ -251,4 +69,9 @@ wrapper((data) => {
             console.log(`ERROR: Could not find parser for endpoint: ${chartName} ignoring`)
         }
     }
+
+    document.getElementsByTagName("footer")[0].innerHTML = moment(new Date()).format("MMMM Do YYYY, h:mm a")
+
+    // Automatically reload page after fifteen minutes to reflect newest info.
+    setTimeout(() => window.location.reload(), 15*60*1000)
 }) 

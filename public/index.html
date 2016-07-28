@@ -16,10 +16,27 @@
         <main id="chart-container"> 
         </main>
 
+        <footer>
+        </footer>
+
+        <!-- Dependencies -->
         <script src="/js/bignumber.js" type="text/javascript"></script>
         <script src="/js/moment.js" type="text/javascript"></script>
         <script src="/charts/Chart.js" type="text/javascript"></script>
+
+        <!-- Raw Data -->
         <script src="/data?callback=wrapper&length=20" type="text/javascript"></script>
+
+        <!-- Chart Style -->
+        <script src="js/chart-style.js" type="text/javascript"></script>
+
+        <!-- Data Parsers -->
+        <script src="js/parsers/github-parser.js" type="text/javascript"></script>
+        <script src="js/parsers/explorer-parser.js" type="text/javascript"></script>
+        <script src="js/parsers/forum-parser.js" type="text/javascript"></script>
+        <script src="js/parsers/blog-parser.js" type="text/javascript"></script>
+
+        <!-- Main JS File -->
         <script src="js/main.js" type="text/javascript"></script>
     </body>
 </html>

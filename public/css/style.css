@@ -32,6 +32,9 @@ body > header {
 body > #chart-container {
     padding: 2em .25em;
     text-align: center;
+
+    /* Ensures footer is on the bottom of the page. */
+    min-height: calc( 100vh - 10em );
 }
 
 .chart {
@@ -122,4 +125,14 @@ body > #chart-container {
 }
 .chart .current-metric:nth-of-type(5) h2 {
     color: #FE1932;
+}
+
+body > footer {
+    background-color: #DDDDDD;
+    font-size: 1em;
+    text-align: right;
+    padding: .25em .5em;
+}
+body > footer:before {
+    content: "Updated: "
 }

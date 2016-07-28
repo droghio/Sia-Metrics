@@ -12,7 +12,7 @@ const process = require("process")
 
 const PORT = process.env.SIA_METRIC_PORT || 8080
 
-//Servers static files.
+//Serves static files.
 app.use(express.static("public"))
 app.use("/charts/", express.static("node_modules/chart.js/dist/"))
 app.use("/js/moment.js", express.static("node_modules/moment/moment.js"))

@@ -15,7 +15,7 @@ class DataEndpoint {
         this.logfile = undefined
 
         //How often to poll endpoints.
-        this.logTimeInterval = 60*1000 //Once a second.
+        this.logTimeInterval = 15*60*1000 //Once ever 15 minutes.
 
         let logDirectory = Path.join(__dirname, "../", "logs")
         try {
