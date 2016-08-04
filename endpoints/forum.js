@@ -12,13 +12,19 @@ class ForumEndpoint extends DataEndpoint {
         this.moduleName = Path.basename(__filename)
         this.fetchData = this.makeFetchData({
             hostname: "forum.sia.tech",
-            path: "/",
+            path: "/api",
             headers: {
                 "User-Agent": "Sia-Metrics"
             }
         }, (data, res) => {
-            return { date: new Date(), statusCode: res.statusCode }
-        }, true)
+            // The api response from the forum is too large for comfort, so
+            // we only parse out the data we need.
+            const parsedData = {}
+            parsedData.date = new Date()
+            parsedData.statusCode = res.statusCode
+            parsedData.posts = data.categories.reduce((prev, cur) => prev+Number(cur.post_count), 0)
+            return parsedData
+        })
     }
 }
 

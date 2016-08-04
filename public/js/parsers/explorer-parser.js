@@ -27,7 +27,7 @@ const explorerParser = (chartName, chartData, callback) => {
     }
     
     //This is the data for the overview bar.
-    const latestData = chartData[chartData.length-1]
+    const latestData = chartData[chartData.length-1] || {}
     dataset.currentData = {
         "difficulty (TH)": (new BigNumber(latestData.difficulty)).times("1e-12").toFixed(0),
         "hash rate (GH/s)": (new BigNumber(latestData.estimatedhashrate)).times("1e-9").toFixed(0),
