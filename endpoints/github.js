@@ -16,8 +16,9 @@ class GithubEndpoint extends DataEndpoint {
             headers: {
                 "User-Agent": "Sia-Metrics"
             }
-        }, (data) => {
+        }, (data, res) => {
             data.date = new Date()
+            data.statusCode = res.statusCode
             return data
         })
     }

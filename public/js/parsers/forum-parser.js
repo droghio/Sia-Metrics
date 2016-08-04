@@ -20,7 +20,7 @@ const forumParser = (chartName, chartData, callback) => {
     }
     
     //This is the data for the overview bar.
-    const latestData = chartData[chartData.length-1]
+    const latestData = chartData[chartData.length-1] || {}
     dataset.currentData = {
         "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
     }
