@@ -16,6 +16,7 @@ const dataParsers = {
     "explorer.js": explorerParser,
     "forum.js": forumParser,
     "blog.js": blogParser, 
+    "slackin.js": slackinParser,
 }
 
 
