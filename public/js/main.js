@@ -15,7 +15,8 @@ const dataParsers = {
     "github.js": githubParser,
     "explorer.js": explorerParser,
     "forum.js": forumParser,
-    "blog.js": blogParser, 
+    "blog.js": onlineParser, 
+    "website.js": onlineParser, 
     "slackin.js": slackinParser,
 }
 

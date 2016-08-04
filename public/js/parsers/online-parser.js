@@ -1,10 +1,10 @@
 //
-// Blog UI Data Parser
+// Online UI Data Parser
 //
 // Parses log data provided to UI frontent into content that can be rendered.
 //
 
-const blogParser = (chartName, chartData, callback) => {
+const onlineParser = (chartName, chartData, callback) => {
     //We are collecting one metric:
     //    Online
 
@@ -20,11 +20,12 @@ const blogParser = (chartName, chartData, callback) => {
     }
     
     //This is the data for the overview bar.
-    const latestData = chartData[chartData.length-1]
+    const latestData = chartData[chartData.length-1] || {}
     dataset.currentData = {
         "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
     }
 
     let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
+    chartStyle.options.scales.yAxes = [{ ticks: { suggestedMin: 0, suggestedMax: 1} }]
     callback(addChartStyle(dataset), chartStyle)
 }
