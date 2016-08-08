@@ -18,6 +18,7 @@ const dataParsers = {
     "blog.js": onlineParser, 
     "website.js": onlineParser, 
     "slackin.js": slackinParser,
+    "twitter.js": twitterParser,
 }
 
 
