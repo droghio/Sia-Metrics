@@ -4,7 +4,7 @@
 // Scrapes various data sources and visualizes
 // collected data in a web ui.
 
-const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js"]
+const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js", "reddit.js"]
 const data = require("./datalogger.js").init(apiEndpoints)
 const express = require("express")
 const app = express()
