@@ -110,10 +110,15 @@ class DataEndpoint {
         } else {
             this.errorLog("Asked for too much data, reloading log.")
             let tmpdata = ""
-            tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on"), "utf8")
-            tmpdata = tmpdata.trim().slice(0,-1)
-            tmpdata = JSON.parse(`[${tmpdata}]`)
-            return tmpdata.splice(-count)
+            try {
+                tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on"), "utf8")
+                tmpdata = tmpdata.trim().slice(0,-1)
+                tmpdata = JSON.parse(`[${tmpdata}]`)
+                return tmpdata.splice(-count)
+            } catch (e) {
+                this.errorLog(`ERROR Reading from logs: ${e}, returning an empty array`)
+                return []
+            }
         }
     }
 }

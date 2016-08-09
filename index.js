@@ -15,6 +15,8 @@ const fs = require("fs")
 
 
 // Serves static files.
+app.use(require("helmet")())
+app.use(require('compression')())
 app.use(express.static("public"))
 app.use("/charts/", express.static("node_modules/chart.js/dist/"))
 app.use("/js/moment.js", express.static("node_modules/moment/moment.js"))
@@ -43,7 +45,9 @@ app.listen(PORT, () => {
         let latestResponse = data.latest(200)
         for (let serviceName in latestResponse){
             // Put the custodian information into the latest data point."
-            latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
+            if (latestResponse[serviceName].length){
+                latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
+            }
         }
         serverResponse = JSON.stringify(latestResponse)
     }
