@@ -58,12 +58,12 @@ getQuote = (() => {
     const quotes = fs.readFileSync("fortunes").toString().split(`\n%\n`)
     return () => quotes[ Math.floor( Math.random() * quotes.length ) ]
 })()
-console.log(`---------------------
----- Sia Metrics ----
----------------------
--- 
--- Starting...
---`)
+console.log("---------------------")
+console.log("---- Sia Metrics ----")
+console.log("---------------------")
+console.log("--") 
+console.log("-- Starting...")
+console.log("--")
 
 console.log("----------------------")
 console.log("-- Quote of the Day --")
@@ -105,6 +105,7 @@ function emailErrors() {
     let servicesDown = []
     let emailRecipients = [process.env.EMAIL_USER]
     let shouldSendEmail = false
+    let downForMoreThanADay = false
     let latestData = data.latest(1)
 
     for (let serviceName in latestData){
@@ -118,9 +119,15 @@ function emailErrors() {
             }
 
             // Only send email if service just went down, or has been down for more than 24 hours straight.
-            if (pendingErrors[serviceName] == null || (pendingErrors[serviceName] && (new Date() - pendingErrors[serviceName].lastSent) > 24*60*60*1000)){
+            if (pendingErrors[serviceName] == null){
                 shouldSendEmail = true
                 pendingErrors[serviceName] = new Date()
+            } else if (pendingErrors[serviceName] && (new Date() - pendingErrors[serviceName]) > 24*60*60*1000) {
+                // If the service has been down for more than 24 hours alert the entire team.
+                shouldSendEmail = true
+                pendingErrors[serviceName] = new Date()
+                downForMoreThanADay = true
+                emailRecipients = getCustodian("all") // Returns array of all emails. Other modules can only add to this list.
             }
         } else {
             pendingErrors[serviceName] = null
@@ -129,13 +136,29 @@ function emailErrors() {
 
     if (shouldSendEmail){
         console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, sending email: ${servicesDown.join(" ")}`)
+        if (downForMoreThanADay){
+            console.log("WARNING: At least one service has down for more than a day; emailing all developers.")
+        }
+
+        const message = downForMoreThanADay ?
+            `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
+                `At least one of which has been down for over a day. The lastest data from all endpoints has been included for debugging purposes.\n`+
+                `A very unfortunate situation detected,`+
+                ` deploying high-priority comic relief counter-measures...\n\n${getQuote()}\n\n` :
+
+            `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
+                `The lastest data from all endpoints has been included for debugging purposes.\nUnfortunate situation detected,`+
+                ` deploying comic relief counter-measures...\n\n${getQuote()}\n\n`
+ 
+        const subject = downForMoreThanADay ?
+            `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down For Over A Day: ${servicesDown.join(" ")}` :
+            `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`
+
         transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: emailRecipients,
-            subject: `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`,
-            text: `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
-                `The lastest data from all endpoints has been included for debugging purposes.\nUnfortunate situation detection,`+
-                ` deploying comic relief counter-measures...\n\n${getQuote()}\n\n`,
+            subject: subject,
+            text: message,
             attachments: [
                 { filename: `siaMetrics-${Math.round((new Date())/1000)}.json`, content: beautify(JSON.stringify(latestData)) }
             ]
@@ -148,4 +171,4 @@ function emailErrors() {
         }
     }
 }
-setInterval(emailErrors,7*1*1000)
+setInterval(emailErrors,7*60*1000)
