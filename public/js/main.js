@@ -30,45 +30,49 @@ const dataParsers = {
 
 wrapper((data) => {
     const chartContainer = document.getElementById("chart-container")
-    for (let chartName in data){
-        if (dataParsers[chartName]){
-            dataParsers[chartName](chartName, data[chartName], (dataset, chartOptions) => {
-                chartName = chartName.replace(".js", "")
-    
-                //Generate metric panel.
-                let currentMetrics = ""
-                for (let dataSetName in dataset.currentData){
-                    currentMetrics += `
-                        <div class="current-metric">
-                            <h2>${dataSetName}</h2>
-                            <span>${dataset.currentData[dataSetName]}</span>
-                        </div>
+    let count = 0;
+    for (let chartname in data){
+        if (dataParsers[chartname]){
+            let genFunction = (chartName) =>
+                (() => dataParsers[chartName](chartName, data[chartName], (dataset, chartOptions) => {
+                    chartName = chartName.replace(".js", "")
+
+                    //Generate metric panel.
+                    let currentMetrics = ""
+                    for (let dataSetName in dataset.currentData){
+                        currentMetrics += `
+                            <div class="current-metric">
+                                <h2>${dataSetName}</h2>
+                                <span>${dataset.currentData[dataSetName]}</span>
+                            </div>
+                        `
+                    }
+
+                    //Generate containing div.
+                    let chartTemplate = `
+                        <section id="${chartName}" class="chart">
+                            <header>
+                                ${chartName}
+                            </header>
+                            <canvas id="${chartName}-chart"></canvas>
+                            <div id="${chartName}-metrics">
+                                ${currentMetrics}
+                            </div>
+                        </section>
                     `
-                }
-    
-                //Generate containing div.
-                let chartTemplate = `
-                    <section id="${chartName}" class="chart">
-                        <header>
-                            ${chartName}
-                        </header>
-                        <canvas id="${chartName}-chart"></canvas>
-                        <div id="${chartName}-metrics">
-                            ${currentMetrics}
-                        </div>
-                    </section>
-                `
-                let parser = new DOMParser()
-                let doc = parser.parseFromString(chartTemplate, "text/html")
-                chartContainer.appendChild(doc.getElementById(chartName))
-    
-                const ctx = document.getElementById(chartName+"-chart").getContext("2d")
-                let myLineChart = new Chart(ctx, {
-                    type: chartOptions.type || defaultChartOptions.type,
-                    data: dataset,
-                    options: chartOptions.options || defaultChartOptions.options
-               })
-           })
+                    let parser = new DOMParser()
+                    let doc = parser.parseFromString(chartTemplate, "text/html")
+                    chartContainer.appendChild(doc.getElementById(chartName))
+
+                    const ctx = document.getElementById(chartName+"-chart").getContext("2d")
+                    let myLineChart = new Chart(ctx, {
+                        type: chartOptions.type || defaultChartOptions.type,
+                        data: dataset,
+                        options: chartOptions.options || defaultChartOptions.options
+                    })
+                }))
+            setTimeout(genFunction(chartname), count*100)
+            count++
         } else {
             console.log(`ERROR: Could not find parser for endpoint: ${chartName} ignoring`)
         }

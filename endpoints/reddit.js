@@ -1,20 +1,20 @@
 //
-// Sia-Explorer Data Endpoint
+// Reddit Data Endpoint
 //
 // All endpoints must log data and return latest data.
 //
 const Path = require("path")
 
 DataEndpoint = require("./dataendpoint.js")
-class ExplorerEndpoint extends DataEndpoint {
+class RedditEndpoint extends DataEndpoint {
     constructor(){
         super()
         this.moduleName = Path.basename(__filename)
         this.fetchData = this.makeFetchData({
-            hostname: "explore.sia.tech",
-            path: "/explorer",
+            hostname: "www.reddit.com",
+            path: "/r/siacoin/new.json?sort=new",
             headers: {
-                "User-Agent": "Sia-Metrics"
+                "User-Agent": "Sia-Metrics:droghio",
             }
         }, (data, res) => {
             data.date = new Date()
@@ -24,4 +24,4 @@ class ExplorerEndpoint extends DataEndpoint {
     }
 }
 
-module.exports = ExplorerEndpoint
+module.exports = RedditEndpoint

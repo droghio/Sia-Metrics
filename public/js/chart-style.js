@@ -6,6 +6,7 @@
 const defaultChartOptions =  {
     type: "line",
     options: {
+        animation : false,
         legend: {
             display: false
         },
@@ -20,6 +21,7 @@ const defaultChartOptions =  {
 const twoAxisLineChart = {
     type: "line",
     options: {
+        animation : false,
         legend: {
             display: false,
         },

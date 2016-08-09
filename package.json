@@ -2,6 +2,10 @@
   "name": "sia-metrics",
   "version": "0.0.1",
   "description": "Data metric collection and display dashboard.",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/droghio/sia-metrics.git"
+  },
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -10,6 +14,11 @@
   "author": "John Drogo",
   "license": "MIT",
   "dependencies": {
-    "moment": "^2.14.1"
+    "bignumber.js": "^2.4.0",
+    "chart.js": "^2.2.1",
+    "express": "^4.14.0",
+    "js-beautify": "^1.6.3",
+    "moment": "^2.14.1",
+    "nodemailer": "^2.5.0"
   }
 }

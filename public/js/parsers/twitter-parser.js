@@ -17,8 +17,9 @@ const twitterParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.followers_count })
-        dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.statuses_count })
+        let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
+        dataset.datasets[0].data.push({ x: date, y: dataPoint.followers_count })
+        dataset.datasets[1].data.push({ x: date, y: dataPoint.statuses_count })
     }
     
     //This is the data for the overview bar.

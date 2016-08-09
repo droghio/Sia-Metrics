@@ -21,9 +21,10 @@ const explorerParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() })
-        dataset.datasets[1].data.push({ x: dataPoint.date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() })
-        dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.height })
+        let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
+        dataset.datasets[0].data.push({ x: date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() })
+        dataset.datasets[1].data.push({ x: date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() })
+        dataset.datasets[2].data.push({ x: date, y: dataPoint.height })
     }
     
     //This is the data for the overview bar.
@@ -39,8 +40,9 @@ const explorerParser = (chartName, chartData, callback) => {
     chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 2000
     chartStyle.options.scales.yAxes[1].ticks.suggestedMax = 20000
     chartStyle.options.scales.yAxes[1].ticks.suggestedMin = 4000
-    chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 500
-    chartStyle.options.scales.yAxes[2].ticks.min = 60000
+    chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 1000
+    chartStyle.options.scales.yAxes[2].ticks.min = 63000
+    chartStyle.options.scales.yAxes[2].ticks.suggestedMax = 67000
 
     callback(addChartStyle(dataset), chartStyle)
 }

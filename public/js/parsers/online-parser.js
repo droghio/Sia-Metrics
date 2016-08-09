@@ -16,16 +16,16 @@ const onlineParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
+        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599 })
     }
     
     //This is the data for the overview bar.
     const latestData = chartData[chartData.length-1] || {}
     dataset.currentData = {
-        "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
+        "is online": latestData.statusCode < 400 || latestData.statusCode > 599,
     }
 
     let chartStyle = JSON.parse(JSON.stringify(defaultChartOptions))
-    chartStyle.options.scales.yAxes = [{ ticks: { suggestedMin: 0, suggestedMax: 1} }]
+    chartStyle.options.scales.yAxes = [{ ticks: { min: 0, max: 1} }]
     callback(addChartStyle(dataset), chartStyle)
 }

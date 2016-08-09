@@ -21,10 +21,11 @@ const githubParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.stargazers_count })
-        dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.subscribers_count })
-        dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.forks })
-        dataset.datasets[3].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode  })
+        let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
+        dataset.datasets[0].data.push({ x: date, y: dataPoint.stargazers_count })
+        dataset.datasets[1].data.push({ x: date, y: dataPoint.subscribers_count })
+        dataset.datasets[2].data.push({ x: date, y: dataPoint.forks })
+        dataset.datasets[3].data.push({ x: date, y: dataPoint.statusCode < 400 || dataPoint.statusCode  })
     }
     
     //This is the data for the overview bar.

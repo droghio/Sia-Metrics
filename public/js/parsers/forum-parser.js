@@ -17,15 +17,16 @@ const forumParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.posts })
-        dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
+        let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
+        dataset.datasets[0].data.push({ x: date, y: dataPoint.posts })
+        dataset.datasets[1].data.push({ x: date, y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599 })
     }
     
     //This is the data for the overview bar.
     const latestData = chartData[chartData.length-1] || {}
     dataset.currentData = {
         "total posts": latestData.posts,
-        "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
+        "is online": latestData.statusCode < 400 || latestData.statusCode > 599,
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))

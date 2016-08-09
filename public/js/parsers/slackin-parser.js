@@ -18,9 +18,10 @@ const slackinParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.active })
-        dataset.datasets[1].data.push({ x: dataPoint.date, y: dataPoint.total })
-        dataset.datasets[2].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 500 || dataPoint.statusCode > 599 })
+        let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
+        dataset.datasets[0].data.push({ x: date, y: dataPoint.active })
+        dataset.datasets[1].data.push({ x: date, y: dataPoint.total })
+        dataset.datasets[2].data.push({ x: date, y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599 })
     }
     
     //This is the data for the overview bar.
@@ -28,11 +29,11 @@ const slackinParser = (chartName, chartData, callback) => {
     dataset.currentData = {
         "active users": latestData.active,
         "total users": latestData.total,
-        "is online": latestData.statusCode < 500 || latestData.statusCode > 599,
+        "is online": latestData.statusCode < 400 || latestData.statusCode > 599,
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
-    chartStyle.options.scales.yAxes.push({ ticks: { suggestedMin: 0, suggestedMax: 1}, id: "3" })
+    chartStyle.options.scales.yAxes.push({ ticks: { min: 0, max: 1}, id: "3" })
 
     callback(addChartStyle(dataset), chartStyle)
 }
