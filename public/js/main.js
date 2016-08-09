@@ -58,6 +58,9 @@ wrapper((data) => {
                             <div id="${chartName}-metrics">
                                 ${currentMetrics}
                             </div>
+                            <footer>
+                                ${data[chartName+".js"][data[chartName+".js"].length-1].custodian}
+                            </footer>
                         </section>
                     `
                     let parser = new DOMParser()

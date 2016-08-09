@@ -47,7 +47,6 @@ body > #chart-container {
     border: 1px solid #C5C5C5;
     border-radius: .5em;
     overflow: hidden;
-    border-bottom: 1em solid #00CBA0;
     margin: 2.5vw;
     vertical-align: top;
 }
@@ -66,6 +65,18 @@ body > #chart-container {
 .chart:nth-of-type(5) {
     border-color: #FE1932;
 }
+.chart:nth-of-type(6) {
+    border-color: #174B40;
+}
+.chart:nth-of-type(7) {
+    border-color: #468EB1;
+}
+.chart:nth-of-type(8) {
+    border-color: #B73D2E;
+}
+.chart:nth-of-type(9) {
+    border-color: #B17123;
+}
 
 .chart header {
     font-size: 2em;
@@ -78,23 +89,39 @@ body > #chart-container {
     left: -.25em;
     margin-bottom: .5em;
 }
-
 .chart:nth-of-type(1) header {
-    background-color: #19B3FE;
+    background-color: #19B3FE; /* light blue */
 }
 .chart:nth-of-type(2) header {
-    background-color:  #D14634;
+    background-color:  #D14634; /* rusty red */
 }
 .chart:nth-of-type(3) header {
-    background-color: #00CBA0;
+    background-color: #00CBA0; /* sia green */
 }
 .chart:nth-of-type(4) header {
-    background-color: #285165;
+    background-color: #285165; /* slate blue */
 }
 .chart:nth-of-type(5) header {
-    background-color: #FE1932;
+    background-color: #FE1932; /* bright red */
+}
+.chart:nth-of-type(6) header {
+    background-color: #174B40; /* deep green */
+}
+.chart:nth-of-type(7) header {
+    background-color: #468EB1; /* midway blue */
+}
+.chart:nth-of-type(8) header {
+    background-color: #B73D2E; /* orange red */
+}
+.chart:nth-of-type(9) header {
+    background-color: #B17123; /* orange */
 }
 
+/*
+B73D2E orange red
+468EB1 midway blue
+B17123 orange
+*/
 .chart canvas {
     position: relative;
     display: inline-block;
@@ -126,6 +153,59 @@ body > #chart-container {
 .chart .current-metric:nth-of-type(5) h2 {
     color: #FE1932;
 }
+.chart .current-metric:nth-of-type(6) h2 {
+    color: #174B40;
+}
+.chart .current-metric:nth-of-type(7) h2 {
+    color: #468EB1;
+}
+.chart .current-metric:nth-of-type(8) h2 {
+    color: #B73D2E;
+}
+.chart .current-metric:nth-of-type(9) h2 {
+    color: #B17123;
+}
+
+
+.chart footer {
+    font-size: 1.25em;
+    font-style: italic;
+    padding: .125em 0px;
+    background-color: #00CBA0;
+    color: #FFFFFF;
+    position: relative;
+    width: calc(100% + .5em);
+    left: -.25em;
+}
+.chart:nth-of-type(1) footer {
+    background-color: #19B3FE;
+}
+.chart:nth-of-type(2) footer {
+    background-color:  #D14634;
+}
+.chart:nth-of-type(3) footer {
+    background-color: #00CBA0;
+}
+.chart:nth-of-type(4) footer {
+    background-color: #285165;
+}
+.chart:nth-of-type(5) footer {
+    background-color: #FE1932;
+}
+.chart:nth-of-type(6) footer{
+    background-color: #174B40;
+}
+.chart:nth-of-type(7) footer {
+    background-color: #468EB1;
+}
+.chart:nth-of-type(8) footer {
+    background-color: #B73D2E;
+}
+.chart:nth-of-type(9) footer {
+    background-color: #B17123;
+}
+
+
 
 body > footer {
     background-color: #DDDDDD;

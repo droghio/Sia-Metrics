@@ -26,7 +26,7 @@ class DataEndpoint {
     }
 
     errorLog(data){
-        console.log(`\t${this.moduleName}: ${data}`)
+        console.log(`\t${this.moduleName}\t${Math.round(Number(new Date())/1000)}: ${data}`)
     }
 
     startLogging(){

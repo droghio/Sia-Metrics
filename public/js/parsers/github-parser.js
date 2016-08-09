@@ -25,7 +25,7 @@ const githubParser = (chartName, chartData, callback) => {
         dataset.datasets[0].data.push({ x: date, y: dataPoint.stargazers_count })
         dataset.datasets[1].data.push({ x: date, y: dataPoint.subscribers_count })
         dataset.datasets[2].data.push({ x: date, y: dataPoint.forks })
-        dataset.datasets[3].data.push({ x: date, y: dataPoint.statusCode < 400 || dataPoint.statusCode  })
+        dataset.datasets[3].data.push({ x: date, y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599  })
     }
     
     //This is the data for the overview bar.
