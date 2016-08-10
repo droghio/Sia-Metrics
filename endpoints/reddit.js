@@ -19,6 +19,26 @@ class RedditEndpoint extends DataEndpoint {
         }, (data, res) => {
             data.date = new Date()
             data.statusCode = res.statusCode
+            
+            if (data.error === undefined){
+                if (data.data && data.data.children){
+                    for (let i = 0; i < data.data.children.length; i++){
+                        //Remove unnecessary data from reddit post.
+                        data.data.children[i].data = {
+                            author: data.data.children[i].data.author,
+                            created_utc: data.data.children[i].data.created_utc,
+                            downs: data.data.children[i].data.downs,
+                            id: data.data.children[i].data.id,
+                            num_comments: data.data.children[i].data.num_comments,
+                            score: data.data.children[i].data.score,
+                            title: data.data.children[i].data.title,
+                            ups: data.data.children[i].data.ups,
+                            url: data.data.children[i].data.url
+                        }
+                    }
+                }
+            }
+
             return data
         })
     }

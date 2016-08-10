@@ -59,8 +59,8 @@ class DataEndpoint {
         fs.writeSync(this.logFile, JSON.stringify(data)+",\n")
 
         //Prevent too much data from being stored in memory.
-        if (this.tmplog.length == 100){
-            this.tmplog = this.tmplog.slice(-50)
+        if (this.tmplog.length >= 400){
+            this.tmplog = this.tmplog.slice(-200)
         }
 
         this.tmplog.push(data)
@@ -108,15 +108,19 @@ class DataEndpoint {
     data(count){
         count = count || 5
         if (count <= this.tmplog.length){
+            // Return the "count" newest elements.
             return this.tmplog.slice(-count)
         } else {
             this.errorLog("Asked for too much data, reloading log.")
             let tmpdata = ""
             try {
                 tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on"), "utf8")
+                // Remove the ",\n" on the last element before attempting to parse.
                 tmpdata = tmpdata.trim().slice(0,-1)
                 tmpdata = JSON.parse(`[${tmpdata}]`)
-                return tmpdata.splice(-count)
+                this.tmplog = tmpdata
+                // Return the "count" newest elements.
+                return this.tmplog.slice(-count)
             } catch (e) {
                 this.errorLog(`ERROR Reading from logs: ${e}, returning an empty array`)
                 return []

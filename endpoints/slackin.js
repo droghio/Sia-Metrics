@@ -25,4 +25,3 @@ class SlackinEndpoint extends DataEndpoint {
 }
 
 module.exports = SlackinEndpoint
-

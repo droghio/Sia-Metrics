@@ -43,6 +43,7 @@ app.listen(PORT, () => {
     const updateData = () => {
         // Queries all modules for their latest data and supdates
         // the response string of the module.
+        console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data`)
         let latestResponse = data.latest(200)
         for (let serviceName in latestResponse){
             // Put the custodian information into the latest data point."
@@ -53,7 +54,7 @@ app.listen(PORT, () => {
         serverResponse = JSON.stringify(latestResponse)
     }
     updateData()
-    setInterval(updateData, 7*60*1000)
+    setInterval(updateData, 7.5025*60*1000)
 
     data.startLogging()
 })
@@ -93,6 +94,18 @@ const getCustodian = (() => {
     return (service) =>
         emailAssignments[service] || emailAssignments["default"]
 })()
+
+if (process.env.EMAIL_USER === undefined){
+    console.log("")
+    console.log("ERROR: No email username found, did you remember to define the EMAIL_USER enviornment variable?")
+    console.log("")
+}
+
+if (process.env.EMAIL_PASSWD === undefined){
+    console.log("")
+    console.log("ERROR: No email password found, did you remember to define the EMAIL_PASSWD enviornment variable?")
+    console.log("")
+}
 
 const smtpConfig = {
     host: 'smtp.gmail.com',
@@ -176,4 +189,4 @@ function emailErrors() {
         }
     }
 }
-setInterval(emailErrors,7*60*1000)
+setInterval(emailErrors,7.5025*60*1000)

@@ -30,4 +30,3 @@ class TwitterEndpoint extends DataEndpoint {
 }
 
 module.exports = TwitterEndpoint
-
