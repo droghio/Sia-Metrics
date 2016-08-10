@@ -25,6 +25,7 @@ app.use("/js/bignumber.js", express.static("node_modules/bignumber.js/bignumber.
 // Data server.
 let serverResponse = ""
 app.get("/data", (req, res) => {
+    res.setHeader("Content-Type", "application/javascript")
     if (req.query.callback){
         res.send(`function ${req.query.callback}(callback){
             callback(${serverResponse})
