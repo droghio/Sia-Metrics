@@ -19,7 +19,7 @@ const redditParser = (chartName, chartData, callback) => {
         dataset.datasets[0].data.push({
             x: dataPoint.date,
             y: dataPoint.data.children.reduce((p, c) =>
-                moment(c.data.created_utc*1000).isAfter(moment().subtract(3, 'days')) ? p+1 : p, 0)
+                moment(c.data.created_utc*1000).isAfter(moment(dataPoint.date).subtract(3, 'days')) ? p+1 : p, 0)
         })
     }
 
