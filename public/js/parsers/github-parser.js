@@ -39,7 +39,6 @@ const githubParser = (chartName, chartData, callback) => {
     //The chart style functions will be imported before this function is called.
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
     chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 1
-    chartStyle.options.scales.yAxes[2].ticks.suggestedMin = 52
     chartStyle.options.scales.yAxes.push({ ticks: { suggestedMin: 0, suggestedMax: 1}, id: "3" })
 
     callback(addChartStyle(dataset), chartStyle)

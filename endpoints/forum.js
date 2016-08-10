@@ -22,7 +22,10 @@ class ForumEndpoint extends DataEndpoint {
             const parsedData = {}
             parsedData.date = new Date()
             parsedData.statusCode = res.statusCode
-            parsedData.posts = data.categories.reduce((prev, cur) => prev+Number(cur.post_count), 0)
+
+            if (data.categories){
+                parsedData.posts = data.categories.reduce((prev, cur) => prev+Number(cur.post_count), 0)
+            }
             return parsedData
         })
     }

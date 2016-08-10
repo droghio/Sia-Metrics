@@ -30,5 +30,7 @@ const forumParser = (chartName, chartData, callback) => {
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
+    chartStyle.options.scales.yAxes[2].ticks.suggestedMin = 0
+    chartStyle.options.scales.yAxes[2].ticks.suggestedMax = 1
     callback(addChartStyle(dataset), chartStyle)
 }

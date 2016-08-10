@@ -14,8 +14,8 @@ const explorerParser = (chartName, chartData, callback) => {
     let dataset = {
         datasets: [
             { label: "difficulty", data: [], yAxisID: "1" },
-            { label: "hash rate", data: [], yAxisID: "1" },
-            { label: "block height", data: [], yAxisID: "2"}
+            { label: "hash rate", data: [], yAxisID: "2" },
+            { label: "block height", data: [], yAxisID: "3"}
         ]
     }
 
@@ -37,12 +37,13 @@ const explorerParser = (chartName, chartData, callback) => {
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
-    chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 2000
+    chartStyle.options.scales.yAxes.push({ id: "3" })
+    /* chartStyle.options.scales.yAxes[1].ticks.fixedStepSize = 2000
     chartStyle.options.scales.yAxes[1].ticks.suggestedMax = 20000
     chartStyle.options.scales.yAxes[1].ticks.suggestedMin = 4000
     chartStyle.options.scales.yAxes[2].ticks.fixedStepSize = 1000
     chartStyle.options.scales.yAxes[2].ticks.min = 63000
-    chartStyle.options.scales.yAxes[2].ticks.suggestedMax = 67000
+    chartStyle.options.scales.yAxes[2].ticks.suggestedMax = 67000*/
 
     callback(addChartStyle(dataset), chartStyle)
 }

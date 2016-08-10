@@ -73,7 +73,7 @@ class DataEndpoint {
         ))
     }
 
-    makeFetchData(options, processData, isNotJSON){
+    makeFetchData(options, processData, isNotJSON, processErr){
        return () => (
             new Promise( (resolve, reject) => {
                 https.get(options, (res) => {
@@ -93,6 +93,8 @@ class DataEndpoint {
                         } catch (e) {
                             this.errorLog(`ERROR: Problem when parsing buffer: ${e}`)
                             this.errorLog(`ERROR: Received data: ${buffer}`)
+                            this.errorLog(`FALLING BACK TO ERROR OBJECT`)
+                            resolve(processData({ error: e }, res))
                         }
                     })
                 }).on("error", (err) => {
