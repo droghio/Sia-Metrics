@@ -31,5 +31,7 @@ const twitterParser = (chartName, chartData, callback) => {
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))
+    chartStyle.options.scales.yAxes[1].ticks.min = 2000
+    chartStyle.options.scales.yAxes[2].ticks.min = 300
     callback(addChartStyle(dataset), chartStyle)
 }
