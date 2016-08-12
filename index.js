@@ -127,28 +127,33 @@ function emailErrors() {
     let latestData = data.latest(1)
 
     for (let serviceName in latestData){
-        let service = latestData[serviceName][0]
-        if (!(service.statusCode < 400 || service.statusCode > 599)){
+        // service will be undefined if there is no data (server just started).
+        if (latestData[serviceName].length >= 1&& latestData[serviceName][0].statusCode){
+            let service = latestData[serviceName][0] 
+            if (!(service.statusCode < 400 || service.statusCode > 599)){
 
-            // Service is down.
-            servicesDown.push(serviceName.replace(".js", "").toUpperCase())
-            if (!emailRecipients.includes(getCustodian(serviceName).email)){
-                emailRecipients.push(getCustodian(serviceName).email)
-            }
+                // Service is down.
+                servicesDown.push(serviceName.replace(".js", "").toUpperCase())
+                if (!emailRecipients.includes(getCustodian(serviceName).email)){
+                    emailRecipients.push(getCustodian(serviceName).email)
+                }
 
-            // Only send email if service just went down, or has been down for more than 24 hours straight.
-            if (pendingErrors[serviceName] == null){
-                shouldSendEmail = true
-                pendingErrors[serviceName] = new Date()
-            } else if (pendingErrors[serviceName] && (new Date() - pendingErrors[serviceName]) > 24*60*60*1000) {
-                // If the service has been down for more than 24 hours alert the entire team.
-                shouldSendEmail = true
-                pendingErrors[serviceName] = new Date()
-                downForMoreThanADay = true
-                emailRecipients = getCustodian("all") // Returns array of all emails. Other modules can only add to this list.
+                // Only send email if service just went down, or has been down for more than 24 hours straight.
+                if (pendingErrors[serviceName] == null){
+                    shouldSendEmail = true
+                    pendingErrors[serviceName] = new Date()
+                } else if (pendingErrors[serviceName] && (new Date() - pendingErrors[serviceName]) > 24*60*60*1000) {
+                    // If the service has been down for more than 24 hours alert the entire team.
+                    shouldSendEmail = true
+                    pendingErrors[serviceName] = new Date()
+                    downForMoreThanADay = true
+                    emailRecipients = getCustodian("all") // Returns array of all emails. Other modules can only add to this list.
+                }
+            } else {
+                pendingErrors[serviceName] = null
             }
         } else {
-            pendingErrors[serviceName] = null
+            console.log(`WARNING: Could not check for errors, no status code data found for "${serviceName}": ${latestData[0]}`)
         }
     }
 

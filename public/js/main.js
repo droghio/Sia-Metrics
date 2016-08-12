@@ -33,47 +33,53 @@ wrapper((data) => {
     let count = 0;
     for (let chartname in data){
         if (dataParsers[chartname]){
-            let genFunction = (chartName) =>
-                (() => dataParsers[chartName](chartName, data[chartName], (dataset, chartOptions) => {
-                    chartName = chartName.replace(".js", "")
+            let genFunction = (chartName) => () => {
+                try {
+                    return dataParsers[chartName](chartName, data[chartName], (dataset, chartOptions) => {
+                        chartName = chartName.replace(".js", "")
 
-                    //Generate metric panel.
-                    let currentMetrics = ""
-                    for (let dataSetName in dataset.currentData){
-                        currentMetrics += `
-                            <div class="current-metric">
-                                <h2>${dataSetName}</h2>
-                                <span>${dataset.currentData[dataSetName]}</span>
-                            </div>
+                        //Generate metric panel.
+                        let currentMetrics = ""
+                        for (let dataSetName in dataset.currentData){
+                            currentMetrics += `
+                                <div class="current-metric">
+                                    <h2>${dataSetName}</h2>
+                                    <span>${dataset.currentData[dataSetName]}</span>
+                                </div>
+                            `
+                        }
+
+                        //Generate containing div.
+                        let chartTemplate = `
+                            <section id="${chartName}" class="chart">
+                                <header>
+                                    ${chartName}
+                                </header>
+                                <canvas id="${chartName}-chart"></canvas>
+                                <div id="${chartName}-metrics">
+                                    ${currentMetrics}
+                                </div>
+                                <footer>
+                                    ${ data[chartName+".js"][data[chartName+".js"].length-1] === undefined ? "data unavailable" : data[chartName+".js"][data[chartName+".js"].length-1].custodian }
+                                </footer>
+                            </section>
                         `
-                    }
+                        let parser = new DOMParser()
+                        let doc = parser.parseFromString(chartTemplate, "text/html")
+                        chartContainer.appendChild(doc.getElementById(chartName))
 
-                    //Generate containing div.
-                    let chartTemplate = `
-                        <section id="${chartName}" class="chart">
-                            <header>
-                                ${chartName}
-                            </header>
-                            <canvas id="${chartName}-chart"></canvas>
-                            <div id="${chartName}-metrics">
-                                ${currentMetrics}
-                            </div>
-                            <footer>
-                                ${data[chartName+".js"][data[chartName+".js"].length-1].custodian}
-                            </footer>
-                        </section>
-                    `
-                    let parser = new DOMParser()
-                    let doc = parser.parseFromString(chartTemplate, "text/html")
-                    chartContainer.appendChild(doc.getElementById(chartName))
-
-                    const ctx = document.getElementById(chartName+"-chart").getContext("2d")
-                    let myLineChart = new Chart(ctx, {
-                        type: chartOptions.type || defaultChartOptions.type,
-                        data: dataset,
-                        options: chartOptions.options || defaultChartOptions.options
+                        const ctx = document.getElementById(chartName+"-chart").getContext("2d")
+                        let myLineChart = new Chart(ctx, {
+                            type: chartOptions.type || defaultChartOptions.type,
+                            data: dataset,
+                            options: chartOptions.options || defaultChartOptions.options
+                        })
                     })
-                }))
+                } catch (e) {
+                    console.log(`ERROR: Unable to load chart for "${chartName}", ${e} on line ${e.lineNumber}`)
+                    return () => null
+                }
+            }
             setTimeout(genFunction(chartname), count*100)
             count++
         } else {
