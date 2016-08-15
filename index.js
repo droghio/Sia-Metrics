@@ -13,57 +13,15 @@ const nodemailer = require("nodemailer")
 const beautify = require("js-beautify")
 const fs = require("fs")
 
-
-// Serves static files.
-app.use(require("helmet")())
-app.use(require('compression')())
-app.use(express.static("public"))
-app.use("/charts/", express.static("node_modules/chart.js/dist/"))
-app.use("/js/moment.js", express.static("node_modules/moment/moment.js"))
-app.use("/js/bignumber.js", express.static("node_modules/bignumber.js/bignumber.js"))
-
-// Data server.
-let serverResponse = ""
-app.get("/data", (req, res) => {
-    res.setHeader("Content-Type", "application/javascript")
-    if (req.query.callback){
-        res.send(`function ${req.query.callback}(callback){
-            callback(${serverResponse})
-        }`)
-    } else {
-        res.send(serverResponse)
-    }
-})
-
-const PORT = process.env.SIA_METRICS_PORT || 8080
-app.listen(PORT, () => {
-    console.log(`Running server on port ${PORT}`)
-
-    // Setup initial data
-    const updateData = () => {
-        // Queries all modules for their latest data and supdates
-        // the response string of the module.
-        console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data`)
-        let latestResponse = data.latest(200)
-        for (let serviceName in latestResponse){
-            // Put the custodian information into the latest data point."
-            if (latestResponse[serviceName].length){
-                latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
-            }
-        }
-        serverResponse = JSON.stringify(latestResponse)
-    }
-    updateData()
-    setInterval(updateData, 7.5025*60*1000)
-
-    data.startLogging()
-})
+// Every 7.5 minutes. A little more to encourage the API to update data before we check for updates.
+const defaultUpdateTime = 7.5025*60*1000
 
 // Quote of the day.
 getQuote = (() => {
     const quotes = fs.readFileSync("fortunes").toString().split(`\n%\n`)
     return () => quotes[ Math.floor( Math.random() * quotes.length ) ]
 })()
+
 console.log("---------------------")
 console.log("---- Sia Metrics ----")
 console.log("---------------------")
@@ -76,7 +34,6 @@ console.log("-- Quote of the Day --")
 console.log("----------------------")
 console.log("--\t"+getQuote().replace(/\n/g, "\n--\t"))
 console.log("--")
-
 
 // Email setup
 const getCustodian = (() => {
@@ -128,8 +85,16 @@ function emailErrors() {
 
     for (let serviceName in latestData){
         // service will be undefined if there is no data (server just started).
-        if (latestData[serviceName].length >= 1&& latestData[serviceName][0].statusCode){
-            let service = latestData[serviceName][0] 
+        if (latestData[serviceName].length >= 1 && latestData[serviceName][0].statusCode){
+            let service = latestData[serviceName][0]
+
+            // Error checker takes in the latest data from each node and returns:
+            //     Whether an email should be sent or not
+            //     To whom an email should be sent
+            //     Whether there is an issue or not (in the event another module triggers an email while we are waiting for a response)
+            //     What the error is
+            //     How long the error has occured
+
             if (!(service.statusCode < 400 || service.statusCode > 599)){
 
                 // Service is down.
@@ -194,4 +159,58 @@ function emailErrors() {
         }
     }
 }
-setInterval(emailErrors,7.5025*60*1000)
+setInterval(emailErrors,defaultUpdateTime)
+
+
+// Data updating.
+const updateData = (count) => {
+    // Queries all modules for their latest data and supdates
+    // the response string of the module.
+    count = count === undefined ? 200 : count
+    console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data: ${count}`)
+    let latestResponse = data.latest(count)
+    for (let serviceName in latestResponse){
+        // Put the custodian information into the latest data point."
+        if (latestResponse[serviceName].length){
+            latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
+        }
+    }
+    const fileName = count === 0 ? "all" : count
+    fs.writeFileSync(`public/data-${fileName}.js`, `function wrapper(callback){ callback(${JSON.stringify(latestResponse)}) }`)
+}
+
+
+// Copying Dependencies for the UI.
+console.log("--------------------------")
+console.log("-- Copying Dependencies --")
+console.log("--------------------------")
+console.log("--")
+console.log("-- Copying chart.js")
+fs.writeFileSync("public/js/chart.js", fs.readFileSync("node_modules/chart.js/dist/Chart.min.js"))
+console.log("-- Copying moment.js")
+fs.writeFileSync("public/js/moment.js", fs.readFileSync("node_modules/moment/min/moment.min.js"))
+console.log("-- Copying bignumber.js")
+fs.writeFileSync("public/js/bignumber.js", fs.readFileSync("node_modules/bignumber.js/bignumber.min.js"))
+console.log("--")
+
+// Initialize Data Files.
+console.log("-----------------------")
+console.log("-- Initializing Data --")
+console.log("-----------------------")
+console.log("--")
+console.log("-- Creating full entry log... (everything)")
+updateData(0)
+console.log("-- Creating 3000 entry log... (1 month)")
+updateData(3000)
+console.log("-- Creating 700 entry log... (1 week)")
+updateData(700)
+console.log("-- Creating 200 entry log... (2 days)")
+updateData(200)
+
+setInterval(updateData, defaultUpdateTime)
+setInterval(() => updateData(700), defaultUpdateTime)
+setInterval(() => updateData(3000), defaultUpdateTime)
+setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
+
+console.log("-- Logging new data...")
+data.startLogging()

@@ -7,6 +7,9 @@ const Path = require("path")
 const fs = require("fs")
 const https = require("https")
 
+// Every 15 minutes
+const defaultUpdateTime = 15*60*1000
+
 class DataEndpoint {
     constructor(){
         this.tmplog = []
@@ -15,7 +18,7 @@ class DataEndpoint {
         this.logfile = undefined
 
         //How often to poll endpoints.
-        this.logTimeInterval = 15*60*1000 //Once ever 15 minutes.
+        this.logTimeInterval = defaultUpdateTime //Once ever 15 minutes.
 
         let logDirectory = Path.join(__dirname, "../", "logs")
         try {
@@ -56,7 +59,7 @@ class DataEndpoint {
     }
     
     logData(data){
-        fs.writeSync(this.logFile, JSON.stringify(data)+",\n")
+        fs.writeSync(this.logFile, JSON.stringify(data).replace(/\n/g, "  ")+",\n")
 
         //Prevent too much data from being stored in memory.
         if (this.tmplog.length >= 400){
@@ -106,8 +109,9 @@ class DataEndpoint {
     }
 
     data(count){
-        count = count || 5
-        if (count <= this.tmplog.length){
+        // Set count to 0 to return all data.
+        count = count === undefined ? 5 : count
+        if (count !== 0 && count <= this.tmplog.length){
             // Return the "count" newest elements.
             return this.tmplog.slice(-count)
         } else {
@@ -120,6 +124,8 @@ class DataEndpoint {
                 tmpdata = JSON.parse(`[${tmpdata}]`)
                 this.tmplog = tmpdata
                 // Return the "count" newest elements.
+                // NOTE: Since all data is wrapped in an object, we are dealing with a shallow copy.
+                // This data must not be directly modified.
                 return this.tmplog.slice(-count)
             } catch (e) {
                 this.errorLog(`ERROR Reading from logs: ${e}, returning an empty array`)
