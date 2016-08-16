@@ -16,7 +16,7 @@ const onlineParser = (chartName, chartData, callback) => {
 
     //This is the data for the chart.
     for (let dataPoint of chartData){
-        dataset.datasets[0].data.push({ x: dataPoint.date, y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599 })
+        dataset.datasets[0].data.push({ x: moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ"), y: dataPoint.statusCode < 400 || dataPoint.statusCode > 599 })
     }
     
     //This is the data for the overview bar.

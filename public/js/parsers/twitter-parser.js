@@ -27,7 +27,7 @@ const twitterParser = (chartName, chartData, callback) => {
     dataset.currentData = {
         "followers": latestData.followers_count,
         "statuses": latestData.statuses_count,
-        "last post date": moment(latestData.status.created_at).fromNow(),
+        "last post date": moment(latestData.status.created_at, "YYYY-MM-DDTHH:mm:ss.SSZ").fromNow(),
     }
 
     let chartStyle = JSON.parse(JSON.stringify(twoAxisLineChart))

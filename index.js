@@ -147,7 +147,6 @@ function emailErrors() {
                 `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down For Over A Day: ${servicesDown.join(" ")}` :
                 `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`
     
-            console.log(`Sent email to: ${emailRecipients.join(" ")}`)
             transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to: emailRecipients,
@@ -217,9 +216,9 @@ console.log("-- Creating 200 entry log... (2 days)")
 updateData(200)
 
 setInterval(updateData, defaultUpdateTime)
-//setInterval(() => updateData(700), defaultUpdateTime)
-//setInterval(() => updateData(3000), defaultUpdateTime)
-//setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
+setInterval(() => updateData(700), defaultUpdateTime)
+setInterval(() => updateData(3000), defaultUpdateTime)
+setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
 
 console.log("-- Logging new data...")
 data.startLogging()
