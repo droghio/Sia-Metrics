@@ -29,12 +29,79 @@ body > header {
     color: #00CBA0;
 }
 
+body > header nav {
+    font-size: .5em;
+    display: inline-block;
+    float: right;
+    padding: .25em;
+}
+
+body > header nav a {
+    display: block;
+    text-decoration: none;
+    float: left;
+    padding: .25em .5em;
+    color: #C5C5C5;
+    border: 1px solid #C5C5C5;
+    border-right: none;
+    transition: all .5s;
+}
+body > header nav a:hover {
+    background-color: #C5C5C5;
+    color: #000;
+}
+body > header nav a:first-of-type {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+body > header nav a:last-of-type {
+    border-right: 1px solid #C5C5C5;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+} 
+.data-200 > header nav a:nth-of-type(1){
+    background-color: #00CBA0;
+    color: #000;
+}
+.data-700 > header nav a:nth-of-type(2){
+    background-color: #00CBA0;
+    color: #000;
+}
+.data-3000 > header nav a:nth-of-type(3){
+    background-color: #00CBA0;
+    color: #000;
+}
+.data-all > header nav a:nth-of-type(4){
+    background-color: #00CBA0;
+    color: #000;
+}
+
 body > #chart-container {
     padding: 2em .25em;
     text-align: center;
 
     /* Ensures footer is on the bottom of the page. */
     min-height: calc( 100vh - 10em );
+}
+
+.popover {
+    display: none;
+    position: fixed;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(0, 0, 0, 0.5);
+    top: 0px;
+    left: 0px;
+    text-align: center;
+    z-index: 100;
+    color: white;
+    font-size: 2.5em;
+}
+.loading #loading {
+    display: block;
+}
+#loading {
+    padding-top: 20vh;
 }
 
 .chart {
