@@ -9,10 +9,13 @@ const https = require("https")
 
 // Every 15 minutes
 const defaultUpdateTime = 15*60*1000
+const anHour = 60*60*1000
+const aDay = 24*anHour
 
 class DataEndpoint {
     constructor(){
         this.tmplog = []
+        this.lastStatus = {} // Used for error checking.
         this.loggingInterval = undefined
         this.moduleName = Path.basename(__filename)
         this.logfile = undefined
@@ -133,6 +136,67 @@ class DataEndpoint {
             }
         }
     }
+
+    // Checks the latest return data for any errors.
+    // Returns an object describing whether a report should be sent (ie email)
+    //   what the current state is, and how long the module has been in this state.
+    checkStatus(){
+        const currentStatus = {
+            reportLevel: 0, // 0 = no report, 1 = primary, 2 = secondary, 3 = all
+            lastChanged: new Date(),
+            lastReport: null,
+            status: "ok",
+            message: "Service is operating within specified parameters."
+        }
+
+        const latestData = this.data(1)
+        if ( latestData.length === 1 ){
+            const service = latestData[0]
+            if (!(service.statusCode < 400 || service.statusCode > 599)){
+
+                // Service is down.
+                currentStatus.status = "offline"
+                if (currentStatus.status !== this.lastStatus.status){
+                    // Service just went down.
+                    currentStatus.reportLevel = 1
+                    currentStatus.lastReport = new Date()
+                    currentStatus.lastChanged = new Date()
+                        // We use the current date instead of the one included in the data packet to prevent us from spamming reports if we reboot the server
+                        // when it has recorded an error.
+                    currentStatus.message = `http error - received status code ${service.statusCode}`
+                }
+
+                else {
+                    // Service has been down.
+                    currentStatus.lastChanged = this.lastStatus.lastChanged
+                    currentStatus.message = this.lastStatus.message
+                    if ( (new Date() - this.lastStatus.lastReported) > aDay){
+                        // It has been more than 24 hours since the service has been down send a priority 3 report.
+                        currentStatus.reportLevel = 3
+                        currentStatus.lastReport = new Date()
+                    }
+
+                    else if ( (new Date() - this.lastStatus.lastReport) > anHour && this.lastStatus.reportLevel < 2) {
+                        // Is has been more than an hour since the service went down and we haven't sent a secondary report.
+                        currentStatus.reportLevel = 2
+                        currentStatus.lastReport = new Date()
+                    }
+                }
+            } // If service is up just return the default currentStatus object.
+
+        } else {
+            this.errorLog("ERROR Checking status, not enough data.")
+            currentStatus.reportLevel = 1
+            currentStatus.lastChanged = new Date()
+            currentStatus.lastReport = new Date()
+            currentStatus.status = "unknown"
+            currentStatus.message = "Error checking status, not enough data."
+        }
+
+        this.lastStatus = currentStatus
+        return currentStatus
+    }
+
 }
 
 module.exports = DataEndpoint

@@ -6,8 +6,6 @@
 
 const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js", "reddit.js"]
 const data = require("./datalogger.js").init(apiEndpoints)
-const express = require("express")
-const app = express()
 const process = require("process")
 const nodemailer = require("nodemailer")
 const beautify = require("js-beautify")
