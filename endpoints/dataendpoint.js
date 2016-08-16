@@ -15,7 +15,13 @@ const aDay = 24*anHour
 class DataEndpoint {
     constructor(){
         this.tmplog = []
-        this.lastStatus = {} // Used for error checking.
+        this.lastStatus =  {
+            reportLevel: 0, // 0 = no report, 1 = primary, 2 = secondary, 3 = all
+            lastChanged: new Date(),
+            lastReport: new Date(),
+            status: "unknown",
+            message: "Logging just started."
+        } // Used for error checking.
         this.loggingInterval = undefined
         this.moduleName = Path.basename(__filename)
         this.logfile = undefined
@@ -145,47 +151,75 @@ class DataEndpoint {
             reportLevel: 0, // 0 = no report, 1 = primary, 2 = secondary, 3 = all
             lastChanged: new Date(),
             lastReport: null,
+            lastReportLevel: 0, // The level of the last report we sent.
             status: "ok",
             message: "Service is operating within specified parameters."
         }
 
         const latestData = this.data(1)
-        if ( latestData.length === 1 ){
-            const service = latestData[0]
-            if (!(service.statusCode < 400 || service.statusCode > 599)){
+        if ( latestData.length === 1){
+            if (isNaN(new Date(latestData[0].date)) === false ){
+                const service = latestData[0]
+                if ( !(service.statusCode < 400 || service.statusCode > 599) && new Date() - new Date(service.date) < defaultUpdateTime*2 ){
+                    // The second check prevents us from spamming reports on first launch if we recorded a failure when we quit.
 
-                // Service is down.
-                currentStatus.status = "offline"
-                if (currentStatus.status !== this.lastStatus.status){
-                    // Service just went down.
-                    currentStatus.reportLevel = 1
-                    currentStatus.lastReport = new Date()
-                    currentStatus.lastChanged = new Date()
-                        // We use the current date instead of the one included in the data packet to prevent us from spamming reports if we reboot the server
-                        // when it has recorded an error.
-                    currentStatus.message = `http error - received status code ${service.statusCode}`
-                }
-
-                else {
-                    // Service has been down.
-                    currentStatus.lastChanged = this.lastStatus.lastChanged
-                    currentStatus.message = this.lastStatus.message
-                    if ( (new Date() - this.lastStatus.lastReported) > aDay){
-                        // It has been more than 24 hours since the service has been down send a priority 3 report.
-                        currentStatus.reportLevel = 3
+                    // Service is down.
+                    currentStatus.status = "offline"
+                    if (currentStatus.status !== this.lastStatus.status){
+                        // Service just went down.
+                        currentStatus.reportLevel = 1
+                        currentStatus.lastReportLevel = 1
                         currentStatus.lastReport = new Date()
+                        currentStatus.lastChanged = new Date(service.date)
+                        currentStatus.message = `http error - received status code ${service.statusCode}`
+                        this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
+                            `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
                     }
 
-                    else if ( (new Date() - this.lastStatus.lastReport) > anHour && this.lastStatus.reportLevel < 2) {
-                        // Is has been more than an hour since the service went down and we haven't sent a secondary report.
-                        currentStatus.reportLevel = 2
-                        currentStatus.lastReport = new Date()
+                    else {
+                        // Service has been down.
+                        currentStatus.lastChanged = this.lastStatus.lastChanged
+                        currentStatus.message = this.lastStatus.message
+                        if ( (new Date() - this.lastStatus.lastReport) > aDay ){
+                            // The service has been down for over 24 hours, send a priority 3 report.
+                            currentStatus.reportLevel = 3
+                            currentStatus.lastReportLevel = 3
+                            currentStatus.lastReport = new Date()
+                            this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
+                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                        }
+
+                        else if ( (new Date() - this.lastStatus.lastReport) > anHour && this.lastStatus.lastReportLevel < 2 ) {
+                            // The service went down an hour ago and we haven't sent a secondary report.
+                            currentStatus.reportLevel = 2
+                            currentStatus.lastReportLevel = 2
+                            currentStatus.lastReport = new Date()
+                            this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
+                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                        }
+
+                        else {
+                            // We are in between reports.
+                            currentStatus.reportLevel = 0
+                            currentStatus.lastReportLevel = this.lastStatus.lastReportLevel
+                            currentStatus.lastReport = this.lastStatus.lastReport
+                            this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
+                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                        }
                     }
-                }
-            } // If service is up just return the default currentStatus object.
+                } // If service is up just return the default currentStatus object. 
+
+            } else {
+               this.errorLog(`ERROR Checking status, invalid date stamp: ${JSON.stringify(latestData[0])}`)
+               currentStatus.reportLevel = 1
+               currentStatus.lastChanged = new Date()
+               currentStatus.lastReport = new Date()
+               currentStatus.status = "unknown"
+               currentStatus.message = "Error checking status, invalid date stamp."
+           }
 
         } else {
-            this.errorLog("ERROR Checking status, not enough data.")
+            this.errorLog(`ERROR Checking status, not enough data: ${JSON.stringify(latestData[0])}`)
             currentStatus.reportLevel = 1
             currentStatus.lastChanged = new Date()
             currentStatus.lastReport = new Date()
@@ -194,7 +228,7 @@ class DataEndpoint {
         }
 
         this.lastStatus = currentStatus
-        return currentStatus
+        return JSON.parse(JSON.stringify(currentStatus))
     }
 
 }

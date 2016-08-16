@@ -35,7 +35,21 @@ console.log("--")
 
 // Email setup
 const getCustodian = (() => {
-    let emailAssignments = { default: { email: process.env.EMAIL_USER, name: "siametrics"} }
+    let emailAssignments = {
+        "default": {
+            "primary": {
+                "email": process.env.EMAIL_USER,
+                "name": "siametrics"
+            },
+            "secondary": {
+                "email": process.env.EMAIL_USER,
+            },
+            "all": {
+                "email": process.env.EMAIL_USER
+            }
+        }
+    }
+
     try {
         emailAssignments = JSON.parse(fs.readFileSync("assignments.json"))
         console.log("------------------------------")
@@ -46,8 +60,18 @@ const getCustodian = (() => {
     } catch (e) {
         console.log(`ERROR: While decoding assignments.json: ${e}\n`)
     }
-    return (service) =>
-        emailAssignments[service] || emailAssignments["default"]
+    return (service, level) => {
+        const fallback = emailAssignments["default"]
+        const assignment = emailAssignments[service] || fallback
+        switch (level){
+            case 3:
+                return assignment.tertiary || fallback.all
+            case 2:
+                return assignment.secondary || fallback.secondary
+            default:
+                return assignment.primary || fallback.primary
+        }
+    }
 })()
 
 if (process.env.EMAIL_USER === undefined){
@@ -73,88 +97,75 @@ const smtpConfig = {
 }
 const transporter = nodemailer.createTransport(smtpConfig)
 
-let pendingErrors = {}
-function emailErrors() {
-    let servicesDown = []
-    let emailRecipients = [process.env.EMAIL_USER]
-    let shouldSendEmail = false
-    let downForMoreThanADay = false
-    let latestData = data.latest(1)
-
-    for (let serviceName in latestData){
-        // service will be undefined if there is no data (server just started).
-        if (latestData[serviceName].length >= 1 && latestData[serviceName][0].statusCode){
-            let service = latestData[serviceName][0]
-
-            // Error checker takes in the latest data from each node and returns:
-            //     Whether an email should be sent or not
-            //     To whom an email should be sent
-            //     Whether there is an issue or not (in the event another module triggers an email while we are waiting for a response)
-            //     What the error is
-            //     How long the error has occured
-
-            if (!(service.statusCode < 400 || service.statusCode > 599)){
-
+function emailErrors() { 
+    try {
+        let emailRecipients = [process.env.EMAIL_USER]
+        let shouldSendEmail = false
+        let servicesDown = []
+        let downForMoreThanADay = false
+    
+        for (const serviceName in data.dataEndpoints){
+            // service will be undefined if there is no data (server just started).
+            const lastStatus = data.dataEndpoints[serviceName].checkStatus()
+            if ( lastStatus.reportLevel > 0 ){
+                shouldSendEmail = true
+    
                 // Service is down.
                 servicesDown.push(serviceName.replace(".js", "").toUpperCase())
-                if (!emailRecipients.includes(getCustodian(serviceName).email)){
-                    emailRecipients.push(getCustodian(serviceName).email)
+    
+                // Merge email lists.
+                let custodians = getCustodian(serviceName, lastStatus.reportLevel).email
+                if (typeof(custodians) !== typeof([])){
+                    custodians = [ custodians ]
                 }
-
-                // Only send email if service just went down, or has been down for more than 24 hours straight.
-                if (pendingErrors[serviceName] == null){
-                    shouldSendEmail = true
-                    pendingErrors[serviceName] = new Date()
-                } else if (pendingErrors[serviceName] && (new Date() - pendingErrors[serviceName]) > 24*60*60*1000) {
-                    // If the service has been down for more than 24 hours alert the entire team.
-                    shouldSendEmail = true
-                    pendingErrors[serviceName] = new Date()
-                    downForMoreThanADay = true
-                    emailRecipients = getCustodian("all") // Returns array of all emails. Other modules can only add to this list.
+    
+                for (const index in custodians){
+                    if (!emailRecipients.includes(custodians[index])){
+                        emailRecipients.push(custodians[index])
+                    }
                 }
-            } else {
-                pendingErrors[serviceName] = null
             }
+        }
+    
+        if (shouldSendEmail){
+            console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, sending email: ${servicesDown.join(" ")}`)
+            if (downForMoreThanADay){
+                console.log("WARNING: At least one service has down for more than a day; emailing all developers.")
+            }
+    
+            const message = downForMoreThanADay ?
+                `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
+                    `At least one of which has been down for over a day. The lastest data from all endpoints has been included for debugging purposes.\n`+
+                    `A very unfortunate situation detected,`+
+                    ` deploying high-priority comic relief counter-measures...\n\n${getQuote()}\n\n` :
+    
+                `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
+                    `The lastest data from all endpoints has been included for debugging purposes.\nUnfortunate situation detected,`+
+                    ` deploying comic relief counter-measures...\n\n${getQuote()}\n\n`
+     
+            const subject = downForMoreThanADay ?
+                `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down For Over A Day: ${servicesDown.join(" ")}` :
+                `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`
+    
+            console.log(`Sent email to: ${emailRecipients.join(" ")}`)
+            transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: emailRecipients,
+                subject: subject,
+                text: message,
+                attachments: [
+                    { filename: `siaMetrics-${Math.round((new Date())/1000)}.json`, content: beautify(JSON.stringify(data.latest(1))) }
+                ]
+            })
+           .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
+           .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
         } else {
-            console.log(`WARNING: Could not check for errors, no status code data found for "${serviceName}": ${latestData[0]}`)
+            if (servicesDown.length){
+                console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, waiting: ${servicesDown.join(" ")}`)
+            }
         }
-    }
-
-    if (shouldSendEmail){
-        console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, sending email: ${servicesDown.join(" ")}`)
-        if (downForMoreThanADay){
-            console.log("WARNING: At least one service has down for more than a day; emailing all developers.")
-        }
-
-        const message = downForMoreThanADay ?
-            `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
-                `At least one of which has been down for over a day. The lastest data from all endpoints has been included for debugging purposes.\n`+
-                `A very unfortunate situation detected,`+
-                ` deploying high-priority comic relief counter-measures...\n\n${getQuote()}\n\n` :
-
-            `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
-                `The lastest data from all endpoints has been included for debugging purposes.\nUnfortunate situation detected,`+
-                ` deploying comic relief counter-measures...\n\n${getQuote()}\n\n`
- 
-        const subject = downForMoreThanADay ?
-            `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down For Over A Day: ${servicesDown.join(" ")}` :
-            `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`
-
-        transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: emailRecipients,
-            subject: subject,
-            text: message,
-            attachments: [
-                { filename: `siaMetrics-${Math.round((new Date())/1000)}.json`, content: beautify(JSON.stringify(latestData)) }
-            ]
-        })
-        .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
-        .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
-    } else {
-        if (servicesDown.length){
-            console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, waiting: ${servicesDown.join(" ")}`)
-        }
+    } catch (e) {
+        console.log(`ERROR Checking for email errors: ${e} on line ${e.stack}`)
     }
 }
 setInterval(emailErrors,defaultUpdateTime)
@@ -206,9 +217,9 @@ console.log("-- Creating 200 entry log... (2 days)")
 updateData(200)
 
 setInterval(updateData, defaultUpdateTime)
-setInterval(() => updateData(700), defaultUpdateTime)
-setInterval(() => updateData(3000), defaultUpdateTime)
-setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
+//setInterval(() => updateData(700), defaultUpdateTime)
+//setInterval(() => updateData(3000), defaultUpdateTime)
+//setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
 
 console.log("-- Logging new data...")
 data.startLogging()
