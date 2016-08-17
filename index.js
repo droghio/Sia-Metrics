@@ -9,6 +9,7 @@ const data = require("./datalogger.js").init(apiEndpoints)
 const process = require("process")
 const nodemailer = require("nodemailer")
 const beautify = require("js-beautify")
+const moment = require("moment")
 const fs = require("fs")
 
 // Every 7.5 minutes. A little more to encourage the API to update data before we check for updates.
@@ -102,16 +103,24 @@ function emailErrors() {
         let emailRecipients = [process.env.EMAIL_USER]
         let shouldSendEmail = false
         let servicesDown = []
-        let downForMoreThanADay = false
-    
+        let message = ""
+ 
         for (const serviceName in data.dataEndpoints){
             // service will be undefined if there is no data (server just started).
             const lastStatus = data.dataEndpoints[serviceName].checkStatus()
+            const properName = serviceName.replace(".js", "").toUpperCase()
+
+            // Update status block.
+            message += `${properName}\n` +
+                `    STATUS:\t${lastStatus.status}\n` +
+                `    TIME:\t\t${moment(lastStatus.lastChanged, "YYYY-MM-DDTHH:mm:ss.SSZ").fromNow()}\n` +
+                `    REASON:\t${lastStatus.message}\n\n`
+
             if ( lastStatus.reportLevel > 0 ){
                 shouldSendEmail = true
     
                 // Service is down.
-                servicesDown.push(serviceName.replace(".js", "").toUpperCase())
+                servicesDown.push(properName)
     
                 // Merge email lists.
                 let custodians = getCustodian(serviceName, lastStatus.reportLevel).email
@@ -129,23 +138,14 @@ function emailErrors() {
     
         if (shouldSendEmail){
             console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, sending email: ${servicesDown.join(" ")}`)
-            if (downForMoreThanADay){
-                console.log("WARNING: At least one service has down for more than a day; emailing all developers.")
-            }
-    
-            const message = downForMoreThanADay ?
-                `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
-                    `At least one of which has been down for over a day. The lastest data from all endpoints has been included for debugging purposes.\n`+
-                    `A very unfortunate situation detected,`+
-                    ` deploying high-priority comic relief counter-measures...\n\n${getQuote()}\n\n` :
-    
-                `The following service${ servicesDown.length > 1 ? "s have" : " has" } gone offline: ${servicesDown.join(" ")}\n\n`+
-                    `The lastest data from all endpoints has been included for debugging purposes.\nUnfortunate situation detected,`+
-                    ` deploying comic relief counter-measures...\n\n${getQuote()}\n\n`
-     
-            const subject = downForMoreThanADay ?
-                `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down For Over A Day: ${servicesDown.join(" ")}` :
-                `Sia-Metrics Service${ servicesDown.length > 1 ? "s" : "" } Down: ${servicesDown.join(" ")}`
+  
+            message = `The following service${ servicesDown.length > 1 ? "s have" : " has" } reported new issues: ${servicesDown.join(" ")}\n` +
+                `The current status of all services are as follows:\n` +
+                `\n` + message + `\n` +
+                `The latest update for all services has been attached for debugging purposes.\n\n` +
+                `Some words of encouragement,\n\n${getQuote()}\n\n`
+                 
+            const subject = `Sia-Metrics Issues With: ${servicesDown.join(" ")}`
     
             transporter.sendMail({
                 from: process.env.EMAIL_USER,
@@ -158,11 +158,7 @@ function emailErrors() {
             })
            .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
            .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
-        } else {
-            if (servicesDown.length){
-                console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, waiting: ${servicesDown.join(" ")}`)
-            }
-        }
+        } 
     } catch (e) {
         console.log(`ERROR Checking for email errors: ${e} on line ${e.stack}`)
     }

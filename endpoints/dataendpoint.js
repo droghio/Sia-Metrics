@@ -160,7 +160,7 @@ class DataEndpoint {
         if ( latestData.length === 1){
             if (isNaN(new Date(latestData[0].date)) === false ){
                 const service = latestData[0]
-                if ( !(service.statusCode < 400 || service.statusCode > 599) && new Date() - new Date(service.date) < defaultUpdateTime*2 ){
+                if ( !(service.statusCode < 400 || service.statusCode > 599) && new Date() - new Date(service.date) < defaultUpdateTime*2000 ){
                     // The second check prevents us from spamming reports on first launch if we recorded a failure when we quit.
 
                     // Service is down.
@@ -173,7 +173,7 @@ class DataEndpoint {
                         currentStatus.lastChanged = new Date(service.date)
                         currentStatus.message = `http error - received status code ${service.statusCode}`
                         this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
-                            `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                            ` last report sent: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
                     }
 
                     else {
@@ -186,7 +186,7 @@ class DataEndpoint {
                             currentStatus.lastReportLevel = 3
                             currentStatus.lastReport = new Date()
                             this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
-                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                                ` last report sent: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
                         }
 
                         else if ( (new Date() - this.lastStatus.lastReport) > anHour && this.lastStatus.lastReportLevel < 2 ) {
@@ -195,7 +195,7 @@ class DataEndpoint {
                             currentStatus.lastReportLevel = 2
                             currentStatus.lastReport = new Date()
                             this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
-                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                                ` last report sent: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
                         }
 
                         else {
@@ -204,7 +204,7 @@ class DataEndpoint {
                             currentStatus.lastReportLevel = this.lastStatus.lastReportLevel
                             currentStatus.lastReport = this.lastStatus.lastReport
                             this.errorLog(`WARNING Service down, report level: ${currentStatus.reportLevel},`+
-                                `last report send: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
+                                ` last report sent: ${Math.floor(Number(this.lastStatus.lastReport)/1000)}`)
                         }
                     }
                 } // If service is up just return the default currentStatus object. 
