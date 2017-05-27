@@ -58,6 +58,10 @@ const waitForWrapper = () => {
                 if (dataParsers[chartname]){
                     let genFunction = (chartName, count) => () => {
                         try {
+                            let custodian
+                            if (data[chartName][data[chartName].length-1].skip === true){
+                                custodian = data[chartName].splice(-1, 1)[0].custodian
+                            }
                             return dataParsers[chartName](chartName, data[chartName], (dataset, chartOptions) => {
                                 chartName = chartName.replace(".js", "")
         
@@ -83,8 +87,7 @@ const waitForWrapper = () => {
                                             ${currentMetrics}
                                         </div>
                                         <footer>
-                                            ${ data[chartName+".js"][data[chartName+".js"].length-1] === undefined ?
-                                                "data unavailable" : data[chartName+".js"][data[chartName+".js"].length-1].custodian }
+                                            ${ custodian || data[chartName+".js"][data[chartName+".js"].length-1].custodian || "data unavailable" }
                                         </footer>
                                     </section>
                                 `

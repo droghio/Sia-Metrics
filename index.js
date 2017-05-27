@@ -4,13 +4,12 @@
 // Scrapes various data sources and visualizes
 // collected data in a web ui.
 
-const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js", "reddit.js"]
-const data = require("./datalogger.js").init(apiEndpoints)
 const process = require("process")
 const nodemailer = require("nodemailer")
 const beautify = require("js-beautify")
 const moment = require("moment")
 const fs = require("fs")
+const Path = require("path")
 
 // Every 7.5 minutes. A little more to encourage the API to update data before we check for updates.
 const defaultUpdateTime = 7.5025*60*1000
@@ -33,6 +32,10 @@ console.log("-- Quote of the Day --")
 console.log("----------------------")
 console.log("--\t"+getQuote().replace(/\n/g, "\n--\t"))
 console.log("--")
+
+// Load the data endpoints
+const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js"]//, "reddit.js"]
+const data = require("./datalogger.js").init(apiEndpoints)
 
 // Email setup
 const getCustodian = (() => {
@@ -98,69 +101,73 @@ const smtpConfig = {
 }
 const transporter = nodemailer.createTransport(smtpConfig)
 
-function emailErrors() { 
-    try {
-        let emailRecipients = [process.env.EMAIL_USER]
-        let shouldSendEmail = false
-        let servicesDown = []
-        let message = ""
- 
-        for (const serviceName in data.dataEndpoints){
-            // service will be undefined if there is no data (server just started).
-            const lastStatus = data.dataEndpoints[serviceName].checkStatus()
-            const properName = serviceName.replace(".js", "").toUpperCase()
+function emailErrors() {
+    if (process.env.EMAIL_USER !== undefined) {
+        try {
+            let emailRecipients = [process.env.EMAIL_USER]
+            let shouldSendEmail = false
+            let servicesDown = []
+            let message = ""
 
-            // Update status block.
-            message += `${properName}\n` +
-                `    STATUS:\t${lastStatus.status}\n` +
-                `    TIME:\t\t${moment(lastStatus.lastChanged, "YYYY-MM-DDTHH:mm:ss.SSZ").fromNow()}\n` +
-                `    REASON:\t${lastStatus.message}\n\n`
+            for (const serviceName in data.dataEndpoints) {
+                // service will be undefined if there is no data (server just started).
+                const lastStatus = data.dataEndpoints[serviceName].checkStatus()
+                const properName = serviceName.replace(".js", "").toUpperCase()
 
-            if ( lastStatus.reportLevel > 0 ){
-                shouldSendEmail = true
-    
-                // Service is down.
-                servicesDown.push(properName)
-    
-                // Merge email lists.
-                let custodians = getCustodian(serviceName, lastStatus.reportLevel).email
-                if (typeof(custodians) !== typeof([])){
-                    custodians = [ custodians ]
-                }
-    
-                for (const index in custodians){
-                    if (!emailRecipients.includes(custodians[index])){
-                        emailRecipients.push(custodians[index])
+                // Update status block.
+                message += `${properName}\n` +
+                    `    STATUS:\t${lastStatus.status}\n` +
+                    `    TIME:\t\t${moment(lastStatus.lastChanged, "YYYY-MM-DDTHH:mm:ss.SSZ").fromNow()}\n` +
+                    `    REASON:\t${lastStatus.message}\n\n`
+
+                if (lastStatus.reportLevel > 0) {
+                    shouldSendEmail = true
+
+                    // Service is down.
+                    servicesDown.push(properName)
+
+                    // Merge email lists.
+                    let custodians = getCustodian(serviceName, lastStatus.reportLevel).email
+                    if (typeof (custodians) !== typeof ([])) {
+                        custodians = [custodians]
+                    }
+
+                    for (const index in custodians) {
+                        if (!emailRecipients.includes(custodians[index])) {
+                            emailRecipients.push(custodians[index])
+                        }
                     }
                 }
             }
+
+            if (shouldSendEmail) {
+                console.log(`Service${servicesDown.length > 1 ? "s" : ""} down, sending email: ${servicesDown.join(" ")}`)
+
+                message = `The following service${servicesDown.length > 1 ? "s have" : " has"} reported new issues: ${servicesDown.join(" ")}\n` +
+                    `The current status of all services are as follows:\n` +
+                    `\n` + message + `\n` +
+                    `The latest update for all services has been attached for debugging purposes.\n\n` +
+                    `Some words of encouragement,\n\n${getQuote()}\n\n`
+
+                const subject = `Sia-Metrics Issues With: ${servicesDown.join(" ")}`
+
+                transporter.sendMail({
+                    from: process.env.EMAIL_USER,
+                    to: emailRecipients,
+                    subject: subject,
+                    text: message,
+                    attachments: [
+                        { filename: `siaMetrics-${Math.round((new Date()) / 1000)}.json`, content: beautify(JSON.stringify(data.latest(1))) }
+                    ]
+                })
+                .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
+                .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
+            }
+        } catch (e) {
+            console.log(`ERROR Checking for email errors: ${e} on line ${e.stack}`)
         }
-    
-        if (shouldSendEmail){
-            console.log(`Service${ servicesDown.length > 1 ? "s" : "" } down, sending email: ${servicesDown.join(" ")}`)
-  
-            message = `The following service${ servicesDown.length > 1 ? "s have" : " has" } reported new issues: ${servicesDown.join(" ")}\n` +
-                `The current status of all services are as follows:\n` +
-                `\n` + message + `\n` +
-                `The latest update for all services has been attached for debugging purposes.\n\n` +
-                `Some words of encouragement,\n\n${getQuote()}\n\n`
-                 
-            const subject = `Sia-Metrics Issues With: ${servicesDown.join(" ")}`
-    
-            transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: emailRecipients,
-                subject: subject,
-                text: message,
-                attachments: [
-                    { filename: `siaMetrics-${Math.round((new Date())/1000)}.json`, content: beautify(JSON.stringify(data.latest(1))) }
-                ]
-            })
-           .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
-           .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
-        } 
-    } catch (e) {
-        console.log(`ERROR Checking for email errors: ${e} on line ${e.stack}`)
+    } else {
+        console.log(`WARN No email user providied, skipping email.`)
     }
 }
 setInterval(emailErrors,defaultUpdateTime)
@@ -168,7 +175,7 @@ setInterval(emailErrors,defaultUpdateTime)
 
 // Data updating.
 const updateData = (count) => {
-    // Queries all modules for their latest data and supdates
+    // Queries all modules for their latest data and updates
     // the response string of the module.
     count = count === undefined ? 200 : count
     console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data: ${count}`)
@@ -179,10 +186,36 @@ const updateData = (count) => {
             latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
         }
     }
-    const fileName = count === 0 ? "all" : count
-    fs.writeFileSync(`public/data-${fileName}.js`, `function wrapper(callback){ callback(${JSON.stringify(latestResponse)}) }`)
+    const fileName = count
+    fs.writeFileSync(`public/data-${fileName}.js`, `function wrapper(callback){ callback(${JSON.stringify(latestResponse)}) }`)   
 }
 
+// Rebuilds the data all file.
+const rebuildAll = () => {
+    fs.writeFileSync("public/data-all.js", "function wrapper(callback) { callback({")
+    const dataEndpointKeys = Object.keys(data.dataEndpoints)
+    const buildEntry = () => {
+        if (dataEndpointKeys.length) {
+            const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+", autoClose: false })
+            const key = dataEndpointKeys.shift()
+            outputStream.write(`"${key}": [`)
+            const inputStream = fs.createReadStream(Path.join(__dirname, "logs", key + "on"))
+            const ended = () => {
+                console.log(`\tindex.js\t${Math.floor(Number(new Date()) / 1000)}: data-all.js appended ${key}`)
+                outputStream.on("finish", () => setTimeout(() => buildEntry(), 0))
+                outputStream.end(`{ "skip": true, "custodian": "${ getCustodian(key).name }" } ],`)
+            }
+            inputStream.on("end", ended)
+            inputStream.on("error", e => { console.log("ERROR " + e); ended() })
+            outputStream.on("error", e => { console.log("ERROR " + e); ended() })
+            inputStream.pipe(outputStream)
+        } else {
+            const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+" })
+            outputStream.end("}) }")
+        }
+    }
+    buildEntry()
+}
 
 // Copying Dependencies for the UI.
 console.log("--------------------------")
@@ -202,19 +235,19 @@ console.log("-----------------------")
 console.log("-- Initializing Data --")
 console.log("-----------------------")
 console.log("--")
-console.log("-- Creating full entry log... (everything)")
-updateData(0)
 console.log("-- Creating 3000 entry log... (1 month)")
 updateData(3000)
 console.log("-- Creating 700 entry log... (1 week)")
 updateData(700)
 console.log("-- Creating 200 entry log... (2 days)")
 updateData(200)
+console.log("-- Creating all entry log... (everything)")
+rebuildAll()
 
-setInterval(updateData, defaultUpdateTime)
-setInterval(() => updateData(700), defaultUpdateTime)
 setInterval(() => updateData(3000), defaultUpdateTime)
-setInterval(() => updateData(0), defaultUpdateTime*4) // Update every half hour
+setInterval(() => updateData(700), defaultUpdateTime)
+setInterval(() => updateData(200), defaultUpdateTime)
+setInterval(() => rebuildAll(), defaultUpdateTime*4)
 
 console.log("-- Logging new data...")
 data.startLogging()
