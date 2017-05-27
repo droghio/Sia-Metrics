@@ -11,6 +11,7 @@ const https = require("https")
 const defaultUpdateTime = 15*60*1000
 const anHour = 60*60*1000
 const aDay = 24*anHour
+const maxTmpLogSize = 15000
 
 class DataEndpoint {
     constructor(){
@@ -71,8 +72,8 @@ class DataEndpoint {
         fs.writeSync(this.logFile, JSON.stringify(data).replace(/\n/g, "  ")+",\n")
 
         //Prevent too much data from being stored in memory.
-        if (this.tmplog.length >= 400){
-            this.tmplog = this.tmplog.slice(-200)
+        if (this.tmplog.length >= maxTmpLogSize){
+            this.tmplog = this.tmplog.slice(-maxTmpLogSize/2)
         }
 
         this.tmplog.push(data)
@@ -120,26 +121,13 @@ class DataEndpoint {
     data(count){
         // Set count to 0 to return all data.
         count = count === undefined ? 5 : count
-        if (count !== 0 && count <= this.tmplog.length){
+        if (count !== 0){
+            if (count > this.tmplog.length) {
+                this.errorLog("Asked for too much data. Returning largest subset available.")
+            }
+
             // Return the "count" newest elements.
             return this.tmplog.slice(-count)
-        } else {
-            this.errorLog("Asked for too much data, reloading log.")
-            let tmpdata = ""
-            try {
-                tmpdata = fs.readFileSync(Path.join(__dirname, "../", "logs", this.moduleName+"on"), "utf8")
-                // Remove the ",\n" on the last element before attempting to parse.
-                tmpdata = tmpdata.trim().slice(0,-1)
-                tmpdata = JSON.parse(`[${tmpdata}]`)
-                this.tmplog = tmpdata
-                // Return the "count" newest elements.
-                // NOTE: Since all data is wrapped in an object, we are dealing with a shallow copy.
-                // This data must not be directly modified.
-                return this.tmplog.slice(-count)
-            } catch (e) {
-                this.errorLog(`ERROR Reading from logs: ${e}, returning an empty array`)
-                return []
-            }
         }
     }
 
