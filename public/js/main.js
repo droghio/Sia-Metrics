@@ -108,11 +108,9 @@ const waitForWrapper = () => {
                         } catch (e) {
                             console.log(`ERROR: Unable to load chart for "${chartName}", ${e} on line ${e.lineNumber}`)
                             // If chart is done loading show the ui.
-                            return () => {
-                                if (count === Object.keys(data).length-1){
-                                    document.getElementsByTagName("body")[0].classList.remove("loading")
-                                    document.getElementsByTagName("body")[0].classList.add(dataUrl)
-                                }
+                            if(count === Object.keys(data).length-1) {
+                                document.getElementsByTagName("body")[0].classList.remove("loading")
+                                document.getElementsByTagName("body")[0].classList.add(dataUrl)
                             }
                         }
                     }
