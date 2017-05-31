@@ -22,9 +22,9 @@ const explorerParser = (chartName, chartData, callback) => {
     //This is the data for the chart.
     for (let dataPoint of chartData){
         let date = moment(dataPoint.date, "YYYY-MM-DDTHH:mm:ss.SSZ")
-        dataset.datasets[0].data.push({ x: date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() })
-        dataset.datasets[1].data.push({ x: date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() })
-        dataset.datasets[2].data.push({ x: date, y: dataPoint.height })
+        if (dataPoint.difficulty){ dataset.datasets[0].data.push({ x: date, y: (new BigNumber(dataPoint.difficulty)).times("1e-12").toNumber() }) }
+        if (dataPoint.estimatedhashrate){ dataset.datasets[1].data.push({ x: date, y: (new BigNumber(dataPoint.estimatedhashrate)).times("1e-9").toNumber() }) }
+        if (dataPoint.height){ dataset.datasets[2].data.push({ x: date, y: dataPoint.height }) }
     }
     
     //This is the data for the overview bar.
