@@ -35,7 +35,29 @@ console.log("--")
 
 // Load the data endpoints
 const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js"]//, "reddit.js"]
-const data = require("./datalogger.js").init(apiEndpoints)
+const data = require("./datalogger.js").init(apiEndpoints, () => {
+    // Initialize Data Files.
+    console.log("-----------------------")
+    console.log("-- Initializing Data --")
+    console.log("-----------------------")
+    console.log("--")
+    console.log("-- Creating 3000 entry log... (1 month)")
+    updateData(3000)
+    console.log("-- Creating 700 entry log... (1 week)")
+    updateData(700)
+    console.log("-- Creating 200 entry log... (2 days)")
+    updateData(200)
+    console.log("-- Creating all entry log... (everything)")
+    rebuildAll()
+
+    setInterval(() => updateData(3000), defaultUpdateTime)
+    setInterval(() => updateData(700), defaultUpdateTime)
+    setInterval(() => updateData(200), defaultUpdateTime)
+    setInterval(() => rebuildAll(), defaultUpdateTime*4)
+
+    console.log("-- Logging new data...")
+    data.startLogging()
+})
 
 // Email setup
 const getCustodian = (() => {
@@ -229,25 +251,3 @@ fs.writeFileSync("public/js/moment.js", fs.readFileSync("node_modules/moment/min
 console.log("-- Copying bignumber.js")
 fs.writeFileSync("public/js/bignumber.js", fs.readFileSync("node_modules/bignumber.js/bignumber.min.js"))
 console.log("--")
-
-// Initialize Data Files.
-console.log("-----------------------")
-console.log("-- Initializing Data --")
-console.log("-----------------------")
-console.log("--")
-console.log("-- Creating 3000 entry log... (1 month)")
-updateData(3000)
-console.log("-- Creating 700 entry log... (1 week)")
-updateData(700)
-console.log("-- Creating 200 entry log... (2 days)")
-updateData(200)
-console.log("-- Creating all entry log... (everything)")
-rebuildAll()
-
-setInterval(() => updateData(3000), defaultUpdateTime)
-setInterval(() => updateData(700), defaultUpdateTime)
-setInterval(() => updateData(200), defaultUpdateTime)
-setInterval(() => rebuildAll(), defaultUpdateTime*4)
-
-console.log("-- Logging new data...")
-data.startLogging()

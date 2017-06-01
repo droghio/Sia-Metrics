@@ -6,12 +6,19 @@
 const Path = require("path")
 
 module.exports = {
-    init: (endpointNames) => {
+    init: (endpointNames, callback) => {
         const dataEndpoints = {}
 
+        let endpointsInited = 0
         endpointNames.forEach((name) => {
             let newEndpoint = require(Path.join(__dirname, "endpoints", name))
             dataEndpoints[name] = new newEndpoint()
+            dataEndpoints[name].preloadData(() => {
+                endpointsInited++
+                if (endpointsInited === endpointNames.length){
+                    callback()
+                }
+            })
         })
 
         const startLogging = () => {

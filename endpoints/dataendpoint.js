@@ -6,6 +6,7 @@
 const Path = require("path")
 const fs = require("fs")
 const https = require("https")
+const utils = require("../utils.js")
 
 // Every 15 minutes
 const defaultUpdateTime = 15*60*1000
@@ -116,6 +117,24 @@ class DataEndpoint {
                 });
             })
         )
+    }
+
+    preloadData(callback){
+        // Preload the last log size amount of previous entries
+        const lineCounter = new (utils.NewLineCounterStream)()
+        const inputStream = fs.createReadStream(Path.join(__dirname, "../", "logs", this.moduleName + "on"))
+        lineCounter.on("finish", () => {
+            const inputStreamInner = fs.createReadStream(Path.join(__dirname, "../", "logs", this.moduleName + "on"))
+            const tailReader = new (utils.TailStream)(Math.max(lineCounter.numberLines-maxTmpLogSize, 0))
+            let buffer = ""
+            tailReader.on("data", data => buffer += data.toString())
+            tailReader.on("finish", () => {
+                this.tmplog = JSON.parse("["+buffer.trim().slice(0,-1)+"]")
+                if (callback){ callback() }
+            })
+            inputStreamInner.pipe(tailReader)
+        })
+        inputStream.pipe(lineCounter)
     }
 
     data(count){
