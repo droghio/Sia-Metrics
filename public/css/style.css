@@ -80,6 +80,10 @@ body > header nav a:last-of-type {
     color: #000;
 }
 
+.float-clear {
+	clear: both;
+}
+
 body > #chart-container {
     padding: 2em .25em;
     text-align: center;
@@ -106,6 +110,13 @@ body > #chart-container {
 }
 #loading {
     padding-top: 20vh;
+}
+
+.loading-failed main::after {
+    content: "No Data Available";
+    font-size: 2em;
+    display: inline-block;
+    padding-top: 30vh;
 }
 
 .chart {

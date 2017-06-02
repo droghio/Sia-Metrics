@@ -51,9 +51,10 @@ document.body.appendChild(dataTag);
 
 const waitForWrapper = () => {
     if (wrapper){
+        let loadedModules = 0
         wrapper((data) => {
             const chartContainer = document.getElementById("chart-container")
-            let count = 0;
+            let count = 0
             for (let chartname in data){
                 if (dataParsers[chartname]){
                     let genFunction = (chartName, count) => () => {
@@ -102,6 +103,8 @@ const waitForWrapper = () => {
                                     options: chartOptions.options || defaultChartOptions.options
                                 })
 
+                                loadedModules++
+
                                 // If chart is done loading show the ui.
                                 if (count === Object.keys(data).length-1){
                                     document.getElementsByTagName("body")[0].classList.remove("loading")
@@ -114,6 +117,10 @@ const waitForWrapper = () => {
                             if(count === Object.keys(data).length-1) {
                                 document.getElementsByTagName("body")[0].classList.remove("loading")
                                 document.getElementsByTagName("body")[0].classList.add(dataUrl)
+                                // Display data unavaible message if no data could be loaded.
+                                if (loadedModules === 0){
+                                    document.getElementsByTagName("body")[0].classList.add("loading-failed")
+                                }
                             }
                         }
                     }
