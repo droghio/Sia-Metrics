@@ -29,12 +29,13 @@ class DataEndpoint {
         this.logfile = undefined
 
         //How often to poll endpoints.
-        this.logTimeInterval = defaultUpdateTime //Once ever 15 minutes.
+        this.logTimeInterval = defaultUpdateTime //Once every 15 minutes.
 
         let logDirectory = Path.join(__dirname, "../", "logs")
         try {
             fs.statSync(logDirectory).isDirectory()
         } catch (e) {
+            // If this fails, the program cannot continue to run.
             fs.mkdirSync(logDirectory)
         }
     }
@@ -54,7 +55,7 @@ class DataEndpoint {
                     this.logData(data)
             ).catch((e) => this.errorLog(e)), this.logTimeInterval)
         } else {
-            this.errorLog("ERROR: Already Logging")
+            this.errorLog("ERROR Already Logging")
         }
     }
 
@@ -65,20 +66,24 @@ class DataEndpoint {
             fs.closeSync(this.logFile)
             this.logfile = undefined
         } else {
-            this.errorLog("ERROR: Not Logging")
+            this.errorLog("ERROR Not Logging")
         }
     }
     
     logData(data){
-        fs.writeSync(this.logFile, JSON.stringify(data).replace(/\n/g, "  ")+",\n")
+        try {
+            fs.writeSync(this.logFile, JSON.stringify(data).replace(/\n/g, "  ")+",\n")
 
-        //Prevent too much data from being stored in memory.
-        if (this.tmplog.length >= maxTmpLogSize){
-            this.tmplog = this.tmplog.slice(-maxTmpLogSize/2)
+            //Prevent too much data from being stored in memory.
+            if (this.tmplog.length >= maxTmpLogSize){
+                this.tmplog = this.tmplog.slice(-maxTmpLogSize/2)
+            }
+
+            this.tmplog.push(data)
+            this.errorLog("Logging Data")
+        } catch (e) {
+            this.errorLog(`ERROR Logging data, {e}`)
         }
-
-        this.tmplog.push(data)
-        this.errorLog("Logging Data")
     }
 
     fetchData(){
@@ -95,7 +100,6 @@ class DataEndpoint {
                     res.on("data", (data) => {
                        buffer += data
                     });
-
                     res.on("end", () => {
                         try {
                             const rawData = isNotJSON ? buffer : JSON.parse(buffer)
@@ -105,8 +109,8 @@ class DataEndpoint {
                                 resolve(rawData)
                             }
                         } catch (e) {
-                            this.errorLog(`ERROR: Problem when parsing buffer: ${e}`)
-                            this.errorLog(`ERROR: Received data: ${buffer}`)
+                            this.errorLog(`ERROR Problem when parsing buffer: ${e}`)
+                            this.errorLog(`ERROR Received data: ${buffer}`)
                             this.errorLog(`FALLING BACK TO ERROR OBJECT`)
                             resolve(processData({ error: e }, res))
                         }

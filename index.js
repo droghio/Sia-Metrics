@@ -3,13 +3,15 @@
 //
 // Scrapes various data sources and visualizes
 // collected data in a web ui.
-
+//
 const process = require("process")
 const nodemailer = require("nodemailer")
 const beautify = require("js-beautify")
 const moment = require("moment")
 const fs = require("fs")
 const Path = require("path")
+
+const versionString = "v0.1.1"
 
 // Every 7.5 minutes. A little more to encourage the API to update data before we check for updates.
 const defaultUpdateTime = 7.5025*60*1000
@@ -25,6 +27,9 @@ console.log("---- Sia Metrics ----")
 console.log("---------------------")
 console.log("--") 
 console.log("-- Starting...")
+console.log("--") 
+console.log("-- Version: " + versionString)
+console.log("-- Date: " + (new Date()).toISOString())
 console.log("--")
 
 console.log("----------------------")
@@ -33,34 +38,12 @@ console.log("----------------------")
 console.log("--\t"+getQuote().replace(/\n/g, "\n--\t"))
 console.log("--")
 
-// Load the data endpoints
-const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js"]//, "reddit.js"]
-const data = require("./datalogger.js").init(apiEndpoints, () => {
-    // Initialize Data Files.
-    console.log("-----------------------")
-    console.log("-- Initializing Data --")
-    console.log("-----------------------")
-    console.log("--")
-    console.log("-- Creating 3000 entry log... (1 month)")
-    updateData(3000)
-    console.log("-- Creating 700 entry log... (1 week)")
-    updateData(700)
-    console.log("-- Creating 200 entry log... (2 days)")
-    updateData(200)
-    console.log("-- Creating all entry log... (everything)")
-    rebuildAll()
-
-    setInterval(() => updateData(3000), defaultUpdateTime)
-    setInterval(() => updateData(700), defaultUpdateTime)
-    setInterval(() => updateData(200), defaultUpdateTime)
-    setInterval(() => rebuildAll(), defaultUpdateTime*4)
-
-    console.log("-- Logging new data...")
-    data.startLogging()
-})
-
 // Email setup
 const getCustodian = (() => {
+    console.log("-------------------------------------")
+    console.log("-- Configuring email notifications --")
+    console.log("-------------------------------------")
+    console.log("--")
     let emailAssignments = {
         "default": {
             "primary": {
@@ -75,16 +58,14 @@ const getCustodian = (() => {
             }
         }
     }
-
+    console.log("-- Loading email assignments")
     try {
         emailAssignments = JSON.parse(fs.readFileSync("assignments.json"))
-        console.log("------------------------------")
-        console.log("-- Loaded email assignments --")
-        console.log("------------------------------")
+        console.log("-- Loaded email assignments")
         console.log(`--\t${beautify(JSON.stringify(emailAssignments)).replace(/\n/g, "\n\--\t")}`)
         console.log("--")
     } catch (e) {
-        console.log(`ERROR: While decoding assignments.json: ${e}\n`)
+        console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: ERROR While decoding assignments.json: ${e}`)
     }
     return (service, level) => {
         const fallback = emailAssignments["default"]
@@ -100,16 +81,15 @@ const getCustodian = (() => {
     }
 })()
 
+console.log("-- Loading email credentials")
 if (process.env.EMAIL_USER === undefined){
-    console.log("")
-    console.log("ERROR: No email username found, did you remember to define the EMAIL_USER enviornment variable?")
-    console.log("")
+    console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: ERROR No email username found, did `
+        + `you remember to define the EMAIL_USER enviornment variable?`)
 }
 
 if (process.env.EMAIL_PASSWD === undefined){
-    console.log("")
-    console.log("ERROR: No email password found, did you remember to define the EMAIL_PASSWD enviornment variable?")
-    console.log("")
+    console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: ERROR No email password found, did `
+        + `you remember to define the EMAIL_PASSWD enviornment variable?`)
 }
 
 const smtpConfig = {
@@ -122,6 +102,7 @@ const smtpConfig = {
     }
 }
 const transporter = nodemailer.createTransport(smtpConfig)
+console.log("--")
 
 function emailErrors() {
     if (process.env.EMAIL_USER !== undefined) {
@@ -183,7 +164,7 @@ function emailErrors() {
                     ]
                 })
                 .then(console.log(`Sent email to: ${emailRecipients.join(" ")}`))
-                .catch((e) => console.log(`ERROR: Failed to send email: ${e}`))
+                .catch((e) => console.log(`ERROR Failed to send email: ${e}`))
             }
         } catch (e) {
             console.log(`ERROR Checking for email errors: ${e} on line ${e.stack}`)
@@ -194,22 +175,25 @@ function emailErrors() {
 }
 setInterval(emailErrors,defaultUpdateTime)
 
-
 // Data updating.
 const updateData = (count) => {
-    // Queries all modules for their latest data and updates
-    // the response string of the module.
-    count = count === undefined ? 200 : count
-    console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data: ${count}`)
-    let latestResponse = data.latest(count)
-    for (let serviceName in latestResponse){
-        // Put the custodian information into the latest data point."
-        if (latestResponse[serviceName].length){
-            latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
+    try {
+        // Queries all modules for their latest data and updates
+        // the response string of the module.
+        count = count === undefined ? 200 : count
+        console.log(`\tindex.js\t${Math.floor(Number(new Date())/1000)}: Refreshing Data: ${count}`)
+        let latestResponse = data.latest(count)
+        for (let serviceName in latestResponse){
+            // Put the custodian information into the latest data point."
+            if (latestResponse[serviceName].length){
+                latestResponse[serviceName][latestResponse[serviceName].length-1].custodian = getCustodian(serviceName).name
+            }
         }
+        const fileName = count
+        fs.writeFileSync(`public/data-${fileName}.js`, `function wrapper(callback){ callback(${JSON.stringify(latestResponse)}) }`)
+    } catch (e) {
+        console.log(`ERROR Updating data: ${e} on line ${e.stack}`)
     }
-    const fileName = count
-    fs.writeFileSync(`public/data-${fileName}.js`, `function wrapper(callback){ callback(${JSON.stringify(latestResponse)}) }`)   
 }
 
 // Rebuilds the data all file.
@@ -217,37 +201,71 @@ const rebuildAll = () => {
     fs.writeFileSync("public/data-all.js", "function wrapper(callback) { callback({")
     const dataEndpointKeys = Object.keys(data.dataEndpoints)
     const buildEntry = () => {
-        if (dataEndpointKeys.length) {
-            const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+", autoClose: false })
-            const key = dataEndpointKeys.shift()
-            outputStream.write(`"${key}": [`)
-            const inputStream = fs.createReadStream(Path.join(__dirname, "logs", key + "on"))
-            const ended = () => {
-                console.log(`\tindex.js\t${Math.floor(Number(new Date()) / 1000)}: data-all.js appended ${key}`)
-                outputStream.on("finish", () => setTimeout(() => buildEntry(), 0))
-                outputStream.end(`{ "skip": true, "custodian": "${ getCustodian(key).name }" } ],`)
+        try {
+            if (dataEndpointKeys.length) {
+                const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+", autoClose: false })
+                const key = dataEndpointKeys.shift()
+                outputStream.write(`"${key}": [`)
+                const inputStream = fs.createReadStream(Path.join(__dirname, "logs", key + "on"))
+                const ended = () => {
+                    console.log(`\tindex.js\t${Math.floor(Number(new Date()) / 1000)}: data-all.js appended ${key}`)
+                    outputStream.on("finish", () => setTimeout(() => buildEntry(), 0))
+                    outputStream.end(`{ "skip": true, "custodian": "${ getCustodian(key).name }" } ],`)
+                }
+                inputStream.on("end", ended)
+                inputStream.on("error", e => { console.log("ERROR " + e); ended() })
+                outputStream.on("error", e => { console.log("ERROR " + e); ended() })
+                inputStream.pipe(outputStream)
+            } else {
+                const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+" })
+                outputStream.end("}) }")
             }
-            inputStream.on("end", ended)
-            inputStream.on("error", e => { console.log("ERROR " + e); ended() })
-            outputStream.on("error", e => { console.log("ERROR " + e); ended() })
-            inputStream.pipe(outputStream)
-        } else {
-            const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+" })
-            outputStream.end("}) }")
+        } catch (e) {
+            console.log(`ERROR Preloading data: ${e} on line ${e.stack}`)
         }
     }
     buildEntry()
 }
 
-// Copying Dependencies for the UI.
-console.log("--------------------------")
-console.log("-- Copying Dependencies --")
-console.log("--------------------------")
+try {
+    // Copying Dependencies for the UI.
+    console.log("--------------------------")
+    console.log("-- Copying Dependencies --")
+    console.log("--------------------------")
+    console.log("--")
+    console.log("-- Copying chart.js")
+    fs.writeFileSync("public/js/chart.js", fs.readFileSync("node_modules/chart.js/dist/Chart.min.js"))
+    console.log("-- Copying moment.js")
+    fs.writeFileSync("public/js/moment.js", fs.readFileSync("node_modules/moment/min/moment.min.js"))
+    console.log("-- Copying bignumber.js")
+    fs.writeFileSync("public/js/bignumber.js", fs.readFileSync("node_modules/bignumber.js/bignumber.min.js"))
+    console.log("--")
+} catch (e) {
+    console.log(`ERROR Copying dependencies: ${e} on line ${e.stack}`)
+}
+
+// Initialize the Data Endpoints.
+console.log("-----------------------")
+console.log("-- Initializing Data --")
+console.log("-----------------------")
 console.log("--")
-console.log("-- Copying chart.js")
-fs.writeFileSync("public/js/chart.js", fs.readFileSync("node_modules/chart.js/dist/Chart.min.js"))
-console.log("-- Copying moment.js")
-fs.writeFileSync("public/js/moment.js", fs.readFileSync("node_modules/moment/min/moment.min.js"))
-console.log("-- Copying bignumber.js")
-fs.writeFileSync("public/js/bignumber.js", fs.readFileSync("node_modules/bignumber.js/bignumber.min.js"))
-console.log("--")
+console.log("-- Spawning data endpoints...")
+const apiEndpoints = ["github.js", "explorer.js", "forum.js", "blog.js", "slackin.js", "website.js", "twitter.js"]//, "reddit.js"]
+const data = require("./datalogger.js").init(apiEndpoints, () => {
+    console.log("-- Creating 3000 entry log... (1 month)")
+    updateData(3000)
+    console.log("-- Creating 700 entry log... (1 week)")
+    updateData(700)
+    console.log("-- Creating 200 entry log... (2 days)")
+    updateData(200)
+    console.log("-- Creating all entry log... (everything)")
+    rebuildAll()
+
+    setInterval(() => updateData(3000), defaultUpdateTime)
+    setInterval(() => updateData(700), defaultUpdateTime)
+    setInterval(() => updateData(200), defaultUpdateTime)
+    setInterval(() => rebuildAll(), defaultUpdateTime*4)
+
+    console.log("-- Logging new data...")
+    data.startLogging()
+})

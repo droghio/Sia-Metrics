@@ -109,7 +109,7 @@ const waitForWrapper = () => {
                                 }
                             })
                         } catch (e) {
-                            console.log(`ERROR: Unable to load chart for "${chartName}", ${e} on line ${e.lineNumber}`)
+                            console.log(`ERROR Unable to load chart for "${chartName}", ${e} on line ${e.lineNumber}`)
                             // If chart is done loading show the ui.
                             if(count === Object.keys(data).length-1) {
                                 document.getElementsByTagName("body")[0].classList.remove("loading")
@@ -121,7 +121,7 @@ const waitForWrapper = () => {
                     setTimeout(genFunction(chartname, count), count*100)
                     count++
                 } else {
-                    console.log(`ERROR: Could not find parser for endpoint: ${chartName} ignoring`)
+                    console.log(`ERROR Could not find parser for endpoint: ${chartName} ignoring`)
                 }
             }
         

@@ -3,7 +3,6 @@
 //
 // Various utilities to support other classes.
 //
-
 const Transform = require('stream').Transform
 const Writeable = require('stream').Writable
 

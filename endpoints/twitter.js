@@ -11,7 +11,7 @@ class TwitterEndpoint extends DataEndpoint {
     constructor(){
         super()
         if (process.env.TWITTER_TOKEN === undefined){
-            this.errorLog("ERROR: Did you forget to define the TWITTER_TOKEN environment variable?")
+            this.errorLog("ERROR Did you forget to define the TWITTER_TOKEN environment variable?")
         }
         this.moduleName = Path.basename(__filename)
         this.fetchData = this.makeFetchData({
