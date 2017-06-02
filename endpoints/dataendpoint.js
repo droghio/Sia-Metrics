@@ -125,18 +125,30 @@ class DataEndpoint {
 
     preloadData(callback){
         // Preload the last log size amount of previous entries
+        const errorHandler = e => {
+            this.errorLog(`ERROR Error when attempting to preload data: ${e}`)
+            if (callback){ callback() }
+        }
         const lineCounter = new (utils.NewLineCounterStream)()
         const inputStream = fs.createReadStream(Path.join(__dirname, "../", "logs", this.moduleName + "on"))
+        inputStream.on("error", errorHandler)
         lineCounter.on("finish", () => {
-            const inputStreamInner = fs.createReadStream(Path.join(__dirname, "../", "logs", this.moduleName + "on"))
-            const tailReader = new (utils.TailStream)(Math.max(lineCounter.numberLines-maxTmpLogSize, 0))
-            let buffer = ""
-            tailReader.on("data", data => buffer += data.toString())
-            tailReader.on("finish", () => {
-                this.tmplog = JSON.parse("["+buffer.trim().slice(0,-1)+"]")
-                if (callback){ callback() }
-            })
-            inputStreamInner.pipe(tailReader)
+            try {
+                const inputStreamInner = fs.createReadStream(Path.join(__dirname, "../", "logs", this.moduleName + "on"))
+                inputStreamInner.on("error", errorHandler)
+                const tailReader = new (utils.TailStream)(Math.max(lineCounter.numberLines-maxTmpLogSize, 0))
+                let buffer = ""
+                tailReader.on("data", data => buffer += data.toString())
+                tailReader.on("finish", () => {
+                    this.tmplog = JSON.parse("["+buffer.trim().slice(0,-1)+"]")
+                    if (callback){ callback() }
+                })
+                inputStreamInner.pipe(tailReader)
+            } catch (e) {
+                this.errorLog(`ERROR Reading last  ${Math.max(lineCounter.numberLines-maxTmpLogSize, 0)} lines of file `
+                    + `failed: ${e}`)
+                if (callback){ callback() }                    
+            }
         })
         inputStream.pipe(lineCounter)
     }
@@ -146,7 +158,7 @@ class DataEndpoint {
         count = count === undefined ? 5 : count
         if (count !== 0){
             if (count > this.tmplog.length) {
-                this.errorLog("Asked for too much data. Returning largest subset available.")
+                this.errorLog("Asked for too much data. Reading log file and returning the largest subset available.")
             }
 
             // Return the "count" newest elements.

@@ -11,7 +11,7 @@ const moment = require("moment")
 const fs = require("fs")
 const Path = require("path")
 
-const versionString = "v0.1.1"
+const versionString = "v0.1.2"
 
 // Every 7.5 minutes. A little more to encourage the API to update data before we check for updates.
 const defaultUpdateTime = 7.5025*60*1000
@@ -213,15 +213,15 @@ const rebuildAll = () => {
                     outputStream.end(`{ "skip": true, "custodian": "${ getCustodian(key).name }" } ],`)
                 }
                 inputStream.on("end", ended)
-                inputStream.on("error", e => { console.log("ERROR " + e); ended() })
-                outputStream.on("error", e => { console.log("ERROR " + e); ended() })
+                inputStream.on("error", e => { console.log("ERROR Error rebuilding all data when reading input: " + e); ended() })
+                outputStream.on("error", e => { console.log("ERROR Error rebuilding all data when writing output: " + e); ended() })
                 inputStream.pipe(outputStream)
             } else {
                 const outputStream = fs.createWriteStream("public/data-all.js", { flags: "a+" })
                 outputStream.end("}) }")
             }
         } catch (e) {
-            console.log(`ERROR Preloading data: ${e} on line ${e.stack}`)
+            console.log(`ERROR rebuilding all data file: ${e} on line ${e.stack}`)
         }
     }
     buildEntry()
